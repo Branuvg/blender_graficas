@@ -13,8 +13,10 @@ use std::f32::consts::PI;
 
 use crate::triangle::triangle;
 
-fn transform(vertex: Vector2, translation: Vector2, scale: f32, rotation: f32) -> Vector2 {
+fn transform(vertex: Vector2, translation: Vector2, scale: f32, rotation: f32, center: Vector2) -> Vector2 {
     let mut new_vertex = vertex;
+    //se mueve hacia el origen
+    new_vertex -= center;
 
     //rotación
     let cos_theta = (rotation * PI / 180.0).cos();
@@ -29,6 +31,9 @@ fn transform(vertex: Vector2, translation: Vector2, scale: f32, rotation: f32) -
     //escala
     new_vertex.x *= scale;
     new_vertex.y *= scale;
+
+    //se mueve de regreso
+    new_vertex += center;
     
     //traslación
     new_vertex.x += translation.x;
@@ -38,21 +43,15 @@ fn transform(vertex: Vector2, translation: Vector2, scale: f32, rotation: f32) -
 }
 
 fn render(framebuffer: &mut Framebuffer, translation: Vector2, scale: f32, rotation: f32){
-    let start = Vector2::new(0.0, 0.0);
-    let end = Vector2::new(300.0, 300.0);
+    let v1 = Vector2::new(500.0, 500.0); // vértice 1
+    let v2 = Vector2::new(600.0, 500.0); // vértice 2
+    let v3 = Vector2::new(550.0, 600.0); // vértice 3
 
-    let tstart = transform(start, translation, scale, rotation);
-    let tend = transform(end, translation, scale, rotation);
+    let center = Vector2::new((v1.x + v2.x + v3.x) / 3.0, (v1.y + v2.y + v3.y) / 3.0);
 
-    line::line(framebuffer, tstart, tend);
-
-    let v1 = Vector2::new(500.0, 500.0);
-    let v2 = Vector2::new(600.0, 500.0);    
-    let v3 = Vector2::new(550.0, 600.0);
-
-    let tv1 = transform(v1, translation, scale, rotation);
-    let tv2 = transform(v2, translation, scale, rotation);
-    let tv3 = transform(v3, translation, scale, rotation);
+    let tv1 = transform(v1, translation, scale, rotation, center);
+    let tv2 = transform(v2, translation, scale, rotation, center);
+    let tv3 = transform(v3, translation, scale, rotation, center);
 
     triangle(framebuffer, tv1, tv2, tv3);
 }
