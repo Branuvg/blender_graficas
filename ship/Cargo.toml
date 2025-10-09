@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 raylib = "5.5.1"
+tobj = "4.0.3"
 
 [profile.dev]
 opt-level = 3

@@ -3,21 +3,18 @@
 mod framebuffer;
 mod line;
 mod triangle;
+mod obj;
 
-//use triangle::triangle;
+use triangle::triangle;
+use obj::Obj;
 use framebuffer::Framebuffer;
 use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
 use std::f32::consts::PI;
 
-use crate::triangle::triangle;
-
-fn transform(vertex: Vector3, translation: Vector2, scale: f32, rotation: Vector3, center: Vector3) -> Vector3 {
+fn transform(vertex: Vector3, translation: Vector2, scale: f32, rotation: Vector3,) -> Vector3 {
     let mut new_vertex = vertex;
-    //se mueve hacia el origen
-    new_vertex -= center;
-
     //pre calcular seno y coseno para rotación
     let (sin_x, cos_x) = (rotation.x * PI / 180.0).sin_cos();
     let (sin_y, cos_y) = (rotation.y * PI / 180.0).sin_cos();
@@ -46,9 +43,6 @@ fn transform(vertex: Vector3, translation: Vector2, scale: f32, rotation: Vector
     //escala
     new_vertex.x *= scale;
     new_vertex.y *= scale;
-
-    //se mueve de r egreso
-    new_vertex += center;
     
     //traslación
     new_vertex.x += translation.x;
@@ -57,50 +51,20 @@ fn transform(vertex: Vector3, translation: Vector2, scale: f32, rotation: Vector
     new_vertex
 }
 
-fn render(framebuffer: &mut Framebuffer, translation: Vector2, scale: f32, rotation: Vector3){
-    let center = Vector3::new(0.0, 0.0, 0.0);
+fn render(framebuffer: &mut Framebuffer, translation: Vector2, scale: f32, rotation: Vector3, vertex_array: &[Vector3]){
+    // recorrer el array y transformar
+    let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
+    for vertex in vertex_array {
+        let transformed = transform(vertex.clone(), translation, scale, rotation);
+        transformed_vertices.push(transformed);
+    }
 
-    let v1 = Vector3::new(center.x - 0.5, center.y - 0.5, center.z - 0.5);
-    let v2 = Vector3::new(center.x + 0.5, center.y - 0.5, center.z - 0.5);
-    let v3 = Vector3::new(center.x + 0.5, center.y + 0.5, center.z - 0.5);
-    let v4 = Vector3::new(center.x - 0.5, center.y + 0.5, center.z - 0.5);
-    let v5 = Vector3::new(center.x - 0.5, center.y - 0.5, center.z + 0.5);
-    let v6 = Vector3::new(center.x + 0.5, center.y - 0.5, center.z + 0.5);
-    let v7 = Vector3::new(center.x + 0.5, center.y + 0.5, center.z + 0.5);
-    let v8 = Vector3::new(center.x - 0.5, center.y + 0.5, center.z + 0.5);
-    
-    let t1 = transform(v1, translation, scale, rotation, center);
-    let t2 = transform(v2, translation, scale, rotation, center);
-    let t3 = transform(v3, translation, scale, rotation, center);
-    let t4 = transform(v4, translation, scale, rotation, center);
-    let t5 = transform(v5, translation, scale, rotation, center);
-    let t6 = transform(v6, translation, scale, rotation, center);
-    let t7 = transform(v7, translation, scale, rotation, center);
-    let t8 = transform(v8, translation, scale, rotation, center);
+    for i in (0..transformed_vertices.len()).step_by(3) {
+        if i + 2 < transformed_vertices.len() {
+            triangle(framebuffer, transformed_vertices[i], transformed_vertices[i + 1], transformed_vertices[i + 2]);
+        }
+    }
 
-    // Front face
-    triangle(framebuffer, t1, t2, t4);
-    triangle(framebuffer, t2, t3, t4);
-
-    // Back face
-    triangle(framebuffer, t5, t6, t8);
-    triangle(framebuffer, t6, t7, t8);
-
-    // Right face
-    triangle(framebuffer, t2, t6, t3);
-    triangle(framebuffer, t6, t7, t3);
-
-    // Left face
-    triangle(framebuffer, t1, t5, t4);
-    triangle(framebuffer, t5, t8, t4);
-
-    // Top face
-    triangle(framebuffer, t3, t7, t4);
-    triangle(framebuffer, t7, t8, t4);
-
-    // Bottom face
-    triangle(framebuffer, t1, t2, t5);
-    triangle(framebuffer, t2, t6, t5);
 }
 
 fn main() {
@@ -117,6 +81,9 @@ fn main() {
     let mut translation = Vector2::new(800.0, 600.0); // traslación original
     let mut scale = 100.0; // escala original
     let mut rotation = Vector3::new(0.0, 0.0, 0.0); // rotación original
+
+    let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
+    let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
@@ -161,7 +128,7 @@ fn main() {
             rotation.z -= 10.0;
         }
 
-        render(&mut framebuffer, translation, scale, rotation);
+        render(&mut framebuffer, translation, scale, rotation, &vertex_array);
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
         
