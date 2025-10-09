@@ -73,7 +73,7 @@ fn main() {
 
     let (mut window, raylib_thread) = raylib::init()
         .size(window_width, window_height)
-        .title("Window Example")
+        .title("Ship")
         .log_level(TraceLogLevel::LOG_WARNING)
         .build();
 
@@ -82,7 +82,7 @@ fn main() {
     let mut scale = 100.0; // escala original
     let mut rotation = Vector3::new(0.0, 0.0, 0.0); // rotación original
 
-    let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
+    let obj = Obj::load("./models/nave.obj").expect("Failed to load obj");
     let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
