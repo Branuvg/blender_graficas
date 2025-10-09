@@ -13,26 +13,41 @@ use std::f32::consts::PI;
 
 use crate::triangle::triangle;
 
-fn transform(vertex: Vector2, translation: Vector2, scale: f32, rotation: f32, center: Vector2) -> Vector2 {
+fn transform(vertex: Vector3, translation: Vector2, scale: f32, rotation: Vector3, center: Vector3) -> Vector3 {
     let mut new_vertex = vertex;
     //se mueve hacia el origen
     new_vertex -= center;
 
+    //pre calcular seno y coseno para rotación
+    let (sin_x, cos_x) = (rotation.x * PI / 180.0).sin_cos();
+    let (sin_y, cos_y) = (rotation.y * PI / 180.0).sin_cos();
+    let (sin_z, cos_z) = (rotation.z * PI / 180.0).sin_cos();
+
     //rotación
-    let cos_theta = (rotation * PI / 180.0).cos();
-    let sin_theta = (rotation * PI / 180.0).sin();
-    
-    let rotated_x = new_vertex.x * cos_theta - new_vertex.y * sin_theta;
-    let rotated_y = new_vertex.x * sin_theta + new_vertex.y * cos_theta;
-    
+    // en X
+    let rotated_y = new_vertex.y * cos_x - new_vertex.z * sin_x;
+    let rotated_z = new_vertex.y * sin_x + new_vertex.z * cos_x;
+    new_vertex.y = rotated_y;
+    new_vertex.z = rotated_z;
+
+    // en Y
+    let rotated_x = new_vertex.x * cos_y + new_vertex.z * sin_y;
+    let rotated_z = -new_vertex.x * sin_y + new_vertex.z * cos_y;
+    new_vertex.x = rotated_x;
+    new_vertex.z = rotated_z;
+
+    // en Z
+    let rotated_x = new_vertex.x * cos_z - new_vertex.y * sin_z;
+    let rotated_y = new_vertex.x * sin_z + new_vertex.y * cos_z;
+
     new_vertex.x = rotated_x;
     new_vertex.y = rotated_y;
-
+    
     //escala
     new_vertex.x *= scale;
     new_vertex.y *= scale;
 
-    //se mueve de regreso
+    //se mueve de r egreso
     new_vertex += center;
     
     //traslación
@@ -42,18 +57,50 @@ fn transform(vertex: Vector2, translation: Vector2, scale: f32, rotation: f32, c
     new_vertex
 }
 
-fn render(framebuffer: &mut Framebuffer, translation: Vector2, scale: f32, rotation: f32){
-    let v1 = Vector2::new(500.0, 500.0); // vértice 1
-    let v2 = Vector2::new(600.0, 500.0); // vértice 2
-    let v3 = Vector2::new(550.0, 600.0); // vértice 3
+fn render(framebuffer: &mut Framebuffer, translation: Vector2, scale: f32, rotation: Vector3){
+    let center = Vector3::new(0.0, 0.0, 0.0);
 
-    let center = Vector2::new((v1.x + v2.x + v3.x) / 3.0, (v1.y + v2.y + v3.y) / 3.0);
+    let v1 = Vector3::new(center.x - 0.5, center.y - 0.5, center.z - 0.5);
+    let v2 = Vector3::new(center.x + 0.5, center.y - 0.5, center.z - 0.5);
+    let v3 = Vector3::new(center.x + 0.5, center.y + 0.5, center.z - 0.5);
+    let v4 = Vector3::new(center.x - 0.5, center.y + 0.5, center.z - 0.5);
+    let v5 = Vector3::new(center.x - 0.5, center.y - 0.5, center.z + 0.5);
+    let v6 = Vector3::new(center.x + 0.5, center.y - 0.5, center.z + 0.5);
+    let v7 = Vector3::new(center.x + 0.5, center.y + 0.5, center.z + 0.5);
+    let v8 = Vector3::new(center.x - 0.5, center.y + 0.5, center.z + 0.5);
+    
+    let t1 = transform(v1, translation, scale, rotation, center);
+    let t2 = transform(v2, translation, scale, rotation, center);
+    let t3 = transform(v3, translation, scale, rotation, center);
+    let t4 = transform(v4, translation, scale, rotation, center);
+    let t5 = transform(v5, translation, scale, rotation, center);
+    let t6 = transform(v6, translation, scale, rotation, center);
+    let t7 = transform(v7, translation, scale, rotation, center);
+    let t8 = transform(v8, translation, scale, rotation, center);
 
-    let tv1 = transform(v1, translation, scale, rotation, center);
-    let tv2 = transform(v2, translation, scale, rotation, center);
-    let tv3 = transform(v3, translation, scale, rotation, center);
+    // Front face
+    triangle(framebuffer, t1, t2, t4);
+    triangle(framebuffer, t2, t3, t4);
 
-    triangle(framebuffer, tv1, tv2, tv3);
+    // Back face
+    triangle(framebuffer, t5, t6, t8);
+    triangle(framebuffer, t6, t7, t8);
+
+    // Right face
+    triangle(framebuffer, t2, t6, t3);
+    triangle(framebuffer, t6, t7, t3);
+
+    // Left face
+    triangle(framebuffer, t1, t5, t4);
+    triangle(framebuffer, t5, t8, t4);
+
+    // Top face
+    triangle(framebuffer, t3, t7, t4);
+    triangle(framebuffer, t7, t8, t4);
+
+    // Bottom face
+    triangle(framebuffer, t1, t2, t5);
+    triangle(framebuffer, t2, t6, t5);
 }
 
 fn main() {
@@ -67,9 +114,9 @@ fn main() {
         .build();
 
     let mut framebuffer = Framebuffer::new(window_width, window_height);
-    let mut translation = Vector2::new(0.0, 0.0); // traslación original
-    let mut scale = 1.0; // escala original
-    let mut rotation = 0.0; // rotación original
+    let mut translation = Vector2::new(800.0, 600.0); // traslación original
+    let mut scale = 100.0; // escala original
+    let mut rotation = Vector3::new(0.0, 0.0, 0.0); // rotación original
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
@@ -90,16 +137,28 @@ fn main() {
             translation.y += 10.0;
         }
         if window.is_key_down(KeyboardKey::KEY_S) {
-            scale += 0.1;
+            scale *= 1.1;
         }
         if window.is_key_down(KeyboardKey::KEY_A) {
-            scale -= 0.1;
+            scale *= 0.9;
         }
-        if window.is_key_down(KeyboardKey::KEY_R) {
-            rotation += 10.0;
+        if window.is_key_down(KeyboardKey::KEY_Q) {
+            rotation.x += 10.0;
+        }
+        if window.is_key_down(KeyboardKey::KEY_W) {
+            rotation.x -= 10.0;
         }
         if window.is_key_down(KeyboardKey::KEY_E) {
-            rotation -= 10.0;
+            rotation.y += 10.0;
+        }
+        if window.is_key_down(KeyboardKey::KEY_R) {
+            rotation.y -= 10.0;
+        }
+        if window.is_key_down(KeyboardKey::KEY_T) {
+            rotation.z += 10.0;
+        }
+        if window.is_key_down(KeyboardKey::KEY_Y) {
+            rotation.z -= 10.0;
         }
 
         render(&mut framebuffer, translation, scale, rotation);
