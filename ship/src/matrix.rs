@@ -171,7 +171,7 @@ pub fn create_viewport_matrix(x: f32, y: f32, width: f32, height: f32) -> Matrix
     new_matrix4(
         half_width, 0.0, 0.0, x + half_width,
         0.0, -half_height, 0.0, y + half_height,
-        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 255.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
     )
 }

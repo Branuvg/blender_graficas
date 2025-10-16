@@ -92,7 +92,7 @@ fn main() {
     );
 
     // Light
-    let light = Light::new(Vector3::new(5.0, 5.0, -5.0));
+    let light = Light::new(Vector3::new(5.0, 5.0, 5.0));
 
     // Parámetros de transformación del modelo (fijos)
     let translation = Vector3::new(0.0, 0.0, 0.0);
