@@ -4,6 +4,7 @@ mod framebuffer;
 mod line;
 mod triangle;
 mod obj;
+mod matrix;
 
 use triangle::triangle;
 use obj::Obj;
@@ -11,47 +12,22 @@ use framebuffer::Framebuffer;
 use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
-use std::f32::consts::PI;
+//use std::f32::consts::PI;
+use matrix::{create_model_matrix, multiply_matrix_vector4};
 
-fn transform(vertex: Vector3, translation: Vector2, scale: f32, rotation: Vector3,) -> Vector3 {
-    let mut new_vertex = vertex;
-    //pre calcular seno y coseno para rotación
-    let (sin_x, cos_x) = (rotation.x * PI / 180.0).sin_cos();
-    let (sin_y, cos_y) = (rotation.y * PI / 180.0).sin_cos();
-    let (sin_z, cos_z) = (rotation.z * PI / 180.0).sin_cos();
+fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector3,) -> Vector3 {
+    let model: Matrix = create_model_matrix(translation, scale, rotation);
 
-    //rotación
-    // en X
-    let rotated_y = new_vertex.y * cos_x - new_vertex.z * sin_x;
-    let rotated_z = new_vertex.y * sin_x + new_vertex.z * cos_x;
-    new_vertex.y = rotated_y;
-    new_vertex.z = rotated_z;
+    let vertex4 = Vector4::new(vertex.x, vertex.y, vertex.z, 1.0);
 
-    // en Y
-    let rotated_x = new_vertex.x * cos_y + new_vertex.z * sin_y;
-    let rotated_z = -new_vertex.x * sin_y + new_vertex.z * cos_y;
-    new_vertex.x = rotated_x;
-    new_vertex.z = rotated_z;
+    let transformed_vertex4 = multiply_matrix_vector4(&model, &vertex4);
 
-    // en Z
-    let rotated_x = new_vertex.x * cos_z - new_vertex.y * sin_z;
-    let rotated_y = new_vertex.x * sin_z + new_vertex.y * cos_z;
+    let transformed_vertex3 = Vector3::new(transformed_vertex4.x / transformed_vertex4.w, transformed_vertex4.y / transformed_vertex4.w, transformed_vertex4.z / transformed_vertex4.w);
 
-    new_vertex.x = rotated_x;
-    new_vertex.y = rotated_y;
-    
-    //escala
-    new_vertex.x *= scale;
-    new_vertex.y *= scale;
-    
-    //traslación
-    new_vertex.x += translation.x;
-    new_vertex.y += translation.y;
-
-    new_vertex
+    transformed_vertex3
 }
 
-fn render(framebuffer: &mut Framebuffer, translation: Vector2, scale: f32, rotation: Vector3, vertex_array: &[Vector3]){
+fn render(framebuffer: &mut Framebuffer, translation: Vector3, scale: f32, rotation: Vector3, vertex_array: &[Vector3]){
     // recorrer el array y transformar
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
     for vertex in vertex_array {
@@ -78,11 +54,11 @@ fn main() {
         .build();
 
     let mut framebuffer = Framebuffer::new(window_width, window_height);
-    let mut translation = Vector2::new(800.0, 600.0); // traslación original
+    let mut translation = Vector3::new(800.0, 600.0, 0.0); // traslación original
     let mut scale = 100.0; // escala original
     let mut rotation = Vector3::new(0.0, 0.0, 0.0); // rotación original
 
-    let obj = Obj::load("./models/nave.obj").expect("Failed to load obj");
+    let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
     let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
