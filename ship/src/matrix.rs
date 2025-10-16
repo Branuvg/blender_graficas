@@ -99,3 +99,47 @@ pub fn create_model_matrix(translation: Vector3, scale: f32, rotation: Vector3) 
 
     scale_matrix * translation_matrix * rotation_matrix 
 }
+
+/// Creates a view matrix using camera position, target, and up vector
+/// This implements a lookAt matrix for camera transformations
+pub fn create_view_matrix(eye: Vector3, target: Vector3, up: Vector3) -> Matrix {
+    // Calculate forward vector (from eye to target, normalized)
+    let mut forward = Vector3::new(
+        target.x - eye.x,
+        target.y - eye.y,
+        target.z - eye.z,
+    );
+    // Normalize forward
+    let forward_length = (forward.x * forward.x + forward.y * forward.y + forward.z * forward.z).sqrt();
+    forward.x /= forward_length;
+    forward.y /= forward_length;
+    forward.z /= forward_length;
+
+    // Calculate right vector (cross product of forward and up, normalized)
+    let mut right = Vector3::new(
+        forward.y * up.z - forward.z * up.y,
+        forward.z * up.x - forward.x * up.z,
+        forward.x * up.y - forward.y * up.x,
+    );
+    // Normalize right
+    let right_length = (right.x * right.x + right.y * right.y + right.z * right.z).sqrt();
+    right.x /= right_length;
+    right.y /= right_length;
+    right.z /= right_length;
+
+    // Calculate actual up vector (cross product of right and forward)
+    let actual_up = Vector3::new(
+        right.y * forward.z - right.z * forward.y,
+        right.z * forward.x - right.x * forward.z,
+        right.x * forward.y - right.y * forward.x,
+    );
+
+    // Create the view matrix (inverse of camera transformation)
+    // This is the lookAt matrix formula
+    new_matrix4(
+        right.x, right.y, right.z, -(right.x * eye.x + right.y * eye.y + right.z * eye.z),
+        actual_up.x, actual_up.y, actual_up.z, -(actual_up.x * eye.x + actual_up.y * eye.y + actual_up.z * eye.z),
+        -forward.x, -forward.y, -forward.z, forward.x * eye.x + forward.y * eye.y + forward.z * eye.z,
+        0.0, 0.0, 0.0, 1.0,
+    )
+}

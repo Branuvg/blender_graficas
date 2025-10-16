@@ -13,17 +13,27 @@ use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
 //use std::f32::consts::PI;
-use matrix::{create_model_matrix, multiply_matrix_vector4};
+use matrix::{create_model_matrix, multiply_matrix_vector4, create_view_matrix};
 
-fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector3,) -> Vector3 {
-    let model: Matrix = create_model_matrix(translation, scale, rotation);
-
+fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector3) -> Vector3 {
+    let model : Matrix = create_model_matrix(translation, scale, rotation);
+    
+    let view : Matrix = create_view_matrix(
+        Vector3::new(0.0, 0.0, 1.0),
+        Vector3::new(0.0, 0.0, 0.0),
+        Vector3::new(0.0, 1.0, 0.1),
+    );
+    
     let vertex4 = Vector4::new(vertex.x, vertex.y, vertex.z, 1.0);
-
-    let transformed_vertex4 = multiply_matrix_vector4(&model, &vertex4);
-
+    
+    let world_transform = multiply_matrix_vector4(&model, &vertex4);
+    
+    let view_transform = multiply_matrix_vector4(&view, &world_transform);
+    
+    let transformed_vertex4 = view_transform;
+    
     let transformed_vertex3 = Vector3::new(transformed_vertex4.x / transformed_vertex4.w, transformed_vertex4.y / transformed_vertex4.w, transformed_vertex4.z / transformed_vertex4.w);
-
+    
     transformed_vertex3
 }
 
