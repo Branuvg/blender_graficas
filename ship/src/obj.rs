@@ -1,5 +1,4 @@
-// obj.rs (version simplificada, falta)
-
+// obj.rs
 use raylib::math::{Vector2, Vector3};
 use tobj;
 
@@ -23,7 +22,7 @@ impl Obj {
                 let x = mesh.positions[i * 3];
                 let y = mesh.positions[i * 3 + 1];
                 let z = mesh.positions[i * 3 + 2];
-                let position = Vector3::new(x, -y, z);
+                let position = Vector3::new(x, -y, z); // Invertir Y para ajustar coordenadas
                 vertices.push(position);
             }
             indices.extend_from_slice(&mesh.indices);

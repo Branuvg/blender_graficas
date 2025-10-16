@@ -1,4 +1,4 @@
-//line.rs
+// line.rs
 use crate::fragment::Fragment;
 use crate::vertex::Vertex;
 use raylib::math::Vector3;
@@ -23,10 +23,19 @@ pub fn line(a: &Vertex, b: &Vertex) -> Vec<Fragment> {
     let mut err = if dx > dy { dx / 2 } else { -dy / 2 };
     
     loop {
-        let z = start.z + (end.z - start.z) * (x0 - start.x as i32) as f32 / (end.x - start.x) as f32;
-        // For now, we'll just use white for the line color.
-        // A more advanced implementation would interpolate the vertex colors.
-        fragments.push(Fragment::new(x0 as f32, y0 as f32, Vector3::new(1.0, 1.0, 1.0), z));
+        let z = if (end.x - start.x).abs() > 0.001 { 
+            start.z + (end.z - start.z) * (x0 - start.x as i32) as f32 / (end.x - start.x) as f32 
+        } else { 
+            start.z 
+        };
+        
+        // Usar el color interpolado o blanco por defecto
+        fragments.push(Fragment::new(
+            x0 as f32, 
+            y0 as f32, 
+            Vector3::new(1.0, 1.0, 1.0), 
+            z
+        ));
         
         if x0 == x1 && y0 == y1 { break; }
         

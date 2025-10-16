@@ -5,6 +5,9 @@ mod triangle;
 mod obj;
 mod matrix;
 mod fragment;
+mod vertex;
+mod uniforms;
+mod camera;
 
 use triangle::triangle;
 use obj::Obj;
@@ -13,37 +16,39 @@ use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
 use std::f32::consts::PI;
-use matrix::{create_model_matrix, multiply_matrix_vector4, create_view_matrix, create_projection_matrix, create_viewport_matrix};
+use matrix::{create_model_matrix, multiply_matrix_vector4, create_projection_matrix, create_viewport_matrix};
 use fragment::Fragment;
+use vertex::Vertex;
+use uniforms::Uniforms;
+use camera::Camera;
 
-fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector3) -> Vector3 {
-    let model : Matrix = create_model_matrix(translation, scale, rotation);
+// Vertex Shader: Transforma vértices usando matrices
+fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
+    let mut result = vertex.clone();
     
-    let view : Matrix = create_view_matrix(
-        Vector3::new(0.0, 0.0, 1.0),
-        Vector3::new(0.0, 0.0, 0.0),
-        Vector3::new(0.0, 1.0, 0.1),
+    // Convertir a Vector4 para transformaciones
+    let vertex4 = Vector4::new(
+        vertex.position.x, 
+        vertex.position.y, 
+        vertex.position.z, 
+        1.0
     );
-
-    let projection : Matrix = create_projection_matrix(PI / 3.0, 1300.0 / 900.0, 0.1, 100.0); // fov_y, aspect (window_width / window_height), near, far
-
-    let viewport : Matrix = create_viewport_matrix(0.0, 0.0, 1300.0, 900.0); // x, y, width, height
     
-    let vertex4 = Vector4::new(vertex.x, vertex.y, vertex.z, 1.0);
+    // Aplicar transformaciones: Model -> View -> Projection -> Viewport
+    let world_transform = multiply_matrix_vector4(&uniforms.model, &vertex4);
+    let view_transform = multiply_matrix_vector4(&uniforms.view, &world_transform);
+    let projection_transform = multiply_matrix_vector4(&uniforms.projection, &view_transform);
+    let viewport_transform = multiply_matrix_vector4(&uniforms.viewport, &projection_transform);
     
-    let world_transform = multiply_matrix_vector4(&model, &vertex4);
+    // División perspectiva
+    let transformed_vertex3 = Vector3::new(
+        viewport_transform.x / viewport_transform.w,
+        viewport_transform.y / viewport_transform.w,
+        viewport_transform.z / viewport_transform.w
+    );
     
-    let view_transform = multiply_matrix_vector4(&view, &world_transform);
-    
-    let projection_transform = multiply_matrix_vector4(&projection, &view_transform);
-    
-    let viewport_transform = multiply_matrix_vector4(&viewport, &projection_transform);
-    
-    let transformed_vertex4 = viewport_transform;
-    
-    let transformed_vertex3 = Vector3::new(transformed_vertex4.x / transformed_vertex4.w, transformed_vertex4.y / transformed_vertex4.w, transformed_vertex4.z / transformed_vertex4.w);
-    
-    transformed_vertex3
+    result.transformed_position = transformed_vertex3;
+    result
 }
 
 fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]) {
@@ -74,11 +79,15 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
 
     // Fragment Processing Stage
     for fragment in fragments {
-        framebuffer.point(
-            fragment.position.x as i32,
-            fragment.position.y as i32,
-            fragment.color
-        );
+        // Verificar que el fragment esté dentro de los límites del framebuffer
+        if fragment.position.x >= 0.0 && fragment.position.x < framebuffer.width as f32 &&
+           fragment.position.y >= 0.0 && fragment.position.y < framebuffer.height as f32 {
+            
+            framebuffer.set_pixel(
+                fragment.position.x as i32,
+                fragment.position.y as i32,
+            );
+        }
     }
 }
 
@@ -93,30 +102,48 @@ fn main() {
         .build();
 
     let mut framebuffer = Framebuffer::new(window_width, window_height);
-    let mut translation = Vector3::new(0.0, 0.0, 0.0); // traslación original
-    let mut scale = 0.2; // escala original
-    let mut rotation = Vector3::new(0.0, 0.0, 0.0); // rotación original
+    
+    // Inicializar cámara
+    let mut camera = Camera::new(
+        Vector3::new(0.0, 0.0, 5.0), // eye
+        Vector3::new(0.0, 0.0, 0.0), // target
+        Vector3::new(0.0, 1.0, 0.0), // up
+    );
+
+    // Parámetros de transformación del modelo
+    let mut translation = Vector3::new(0.0, 0.0, 0.0);
+    let mut scale = 1.0;
+    let mut rotation = Vector3::new(0.0, 0.0, 0.0);
 
     let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
-    let vertex_array = obj.get_vertex_array();
+    
+    // Convertir Vector3 a Vertex
+    let vertex_array: Vec<Vertex> = obj.get_vertex_array()
+        .iter()
+        .map(|v| Vertex::new(*v))
+        .collect();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
     while !window.window_should_close() {
+        // Procesar entrada de cámara
+        camera.process_input(&window);
+        
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
         
+        // Controles de transformación del modelo
         if window.is_key_down(KeyboardKey::KEY_RIGHT) {
-            translation.x -= 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_LEFT) {
             translation.x += 0.1;
         }
+        if window.is_key_down(KeyboardKey::KEY_LEFT) {
+            translation.x -= 0.1;
+        }
         if window.is_key_down(KeyboardKey::KEY_UP) {
-            translation.y -= 0.1;
+            translation.y += 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_DOWN) {
-            translation.y += 0.1;
+            translation.y -= 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_S) {
             scale *= 1.1;
@@ -125,25 +152,39 @@ fn main() {
             scale *= 0.9;
         }
         if window.is_key_down(KeyboardKey::KEY_Q) {
-            rotation.x += 10.0;
+            rotation.z += 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_W) {
-            rotation.x -= 10.0;
+            rotation.z -= 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_E) {
-            rotation.y += 10.0;
+            rotation.y += 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_R) {
-            rotation.y -= 10.0;
+            rotation.y -= 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_T) {
-            rotation.z += 10.0;
+            rotation.x += 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_Y) {
-            rotation.z -= 10.0;
+            rotation.x -= 0.1;
         }
 
-        render(&mut framebuffer, translation, scale, rotation, &vertex_array);
+        // Crear matrices de transformación
+        let model_matrix = create_model_matrix(translation, scale, rotation);
+        let view_matrix = camera.get_view_matrix();
+        let projection_matrix = create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0);
+        let viewport_matrix = create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32);
+
+        // Crear uniforms
+        let uniforms = Uniforms {
+            model: model_matrix,
+            view: view_matrix,
+            projection: projection_matrix,
+            viewport: viewport_matrix,
+        };
+
+        render(&mut framebuffer, &uniforms, &vertex_array);
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
         
