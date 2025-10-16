@@ -52,9 +52,9 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
             let (w, v, u) = barycentric_coordinates(x  as f32, y as f32, v1, v2, v3);
 
             let normal = v1.normal;
-            let depth = v1.transformed_position.z;
-            //let color = Vector3::new(1.0, 0.0, 0.0);
-            let color = color_a * w + color_b * v + color_c * u;
+            let depth = v1.transformed_position.z * w + v2.transformed_position.z * v + v3.transformed_position.z * u;
+            let color = Vector3::new(1.0, 0.0, 0.0);
+            //let color = color_a * w + color_b * v + color_c * u;
 
             let intensity = normal.dot(light.position.normalized()).max(0.0);
 
