@@ -1,18 +1,15 @@
 // triangle.rs
-use raylib::math::{Vector2, Vector3};
-use crate::{framebuffer::Framebuffer, line::line};
+use crate::fragment::Fragment;
+use crate::vertex::Vertex;
+use crate::line::line;
 
-pub fn triangle(
-    framebuffer: &mut Framebuffer,
-    a: Vector3,
-    b: Vector3,
-    c: Vector3
-) {
-    let a = Vector2::new(a.x, a.y);
-    let b = Vector2::new(b.x, b.y);
-    let c = Vector2::new(c.x, c.y);
+pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
+    let mut fragments = Vec::new();
     
-    line(framebuffer, a, b);
-    line(framebuffer, b, c);
-    line(framebuffer, c, a);
+    // Draw the three sides of the triangle
+    fragments.extend(line(v1, v2));
+    fragments.extend(line(v2, v3));
+    fragments.extend(line(v3, v1));
+    
+    fragments
 }

@@ -4,6 +4,7 @@ mod line;
 mod triangle;
 mod obj;
 mod matrix;
+mod fragment;
 
 use triangle::triangle;
 use obj::Obj;
@@ -13,6 +14,7 @@ use std::thread;
 use std::time::Duration;
 use std::f32::consts::PI;
 use matrix::{create_model_matrix, multiply_matrix_vector4, create_view_matrix, create_projection_matrix, create_viewport_matrix};
+use fragment::Fragment;
 
 fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector3) -> Vector3 {
     let model : Matrix = create_model_matrix(translation, scale, rotation);
@@ -44,20 +46,40 @@ fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector
     transformed_vertex3
 }
 
-fn render(framebuffer: &mut Framebuffer, translation: Vector3, scale: f32, rotation: Vector3, vertex_array: &[Vector3]){
-    // recorrer el array y transformar
+fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]) {
+    // Vertex Shader Stage
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
     for vertex in vertex_array {
-        let transformed = transform(vertex.clone(), translation, scale, rotation);
+        let transformed = vertex_shader(vertex, uniforms);
         transformed_vertices.push(transformed);
     }
 
+    // Primitive Assembly Stage
+    let mut triangles = Vec::new();
     for i in (0..transformed_vertices.len()).step_by(3) {
         if i + 2 < transformed_vertices.len() {
-            triangle(framebuffer, transformed_vertices[i], transformed_vertices[i + 1], transformed_vertices[i + 2]);
+            triangles.push([
+                transformed_vertices[i].clone(),
+                transformed_vertices[i + 1].clone(),
+                transformed_vertices[i + 2].clone(),
+            ]);
         }
     }
 
+    // Rasterization Stage
+    let mut fragments = Vec::new();
+    for tri in &triangles {
+        fragments.extend(triangle(&tri[0], &tri[1], &tri[2]));
+    }
+
+    // Fragment Processing Stage
+    for fragment in fragments {
+        framebuffer.point(
+            fragment.position.x as i32,
+            fragment.position.y as i32,
+            fragment.color
+        );
+    }
 }
 
 fn main() {
