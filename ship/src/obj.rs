@@ -1,5 +1,5 @@
 // obj.rs
-use raylib::math::{Vector2, Vector3};
+use raylib::math::Vector3;
 use tobj;
 
 pub struct Obj {

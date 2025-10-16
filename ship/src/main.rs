@@ -17,7 +17,6 @@ use std::thread;
 use std::time::Duration;
 use std::f32::consts::PI;
 use matrix::{create_model_matrix, multiply_matrix_vector4, create_projection_matrix, create_viewport_matrix};
-use fragment::Fragment;
 use vertex::Vertex;
 use uniforms::Uniforms;
 use camera::Camera;
@@ -110,10 +109,10 @@ fn main() {
         Vector3::new(0.0, 1.0, 0.0), // up
     );
 
-    // Parámetros de transformación del modelo
-    let mut translation = Vector3::new(0.0, 0.0, 0.0);
-    let mut scale = 1.0;
-    let mut rotation = Vector3::new(0.0, 0.0, 0.0);
+    // Parámetros de transformación del modelo (fijos)
+    let translation = Vector3::new(0.0, 0.0, 0.0);
+    let scale = 1.0;
+    let rotation = Vector3::new(0.0, 0.0, 0.0);
 
     let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
     
@@ -126,50 +125,11 @@ fn main() {
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
     while !window.window_should_close() {
-        // Procesar entrada de cámara
         camera.process_input(&window);
         
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
         
-        // Controles de transformación del modelo
-        if window.is_key_down(KeyboardKey::KEY_RIGHT) {
-            translation.x += 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_LEFT) {
-            translation.x -= 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_UP) {
-            translation.y += 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_DOWN) {
-            translation.y -= 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_S) {
-            scale *= 1.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_A) {
-            scale *= 0.9;
-        }
-        if window.is_key_down(KeyboardKey::KEY_Q) {
-            rotation.z += 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_W) {
-            rotation.z -= 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_E) {
-            rotation.y += 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_R) {
-            rotation.y -= 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_T) {
-            rotation.x += 0.1;
-        }
-        if window.is_key_down(KeyboardKey::KEY_Y) {
-            rotation.x -= 0.1;
-        }
-
         // Crear matrices de transformación
         let model_matrix = create_model_matrix(translation, scale, rotation);
         let view_matrix = camera.get_view_matrix();

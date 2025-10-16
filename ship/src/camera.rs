@@ -124,25 +124,25 @@ impl Camera {
 
         // Q/E keys for horizontal panning
         if window.is_key_down(KeyboardKey::KEY_Q) {
-            self.target.x -= right.x * self.pan_speed;
-            self.target.z -= right.z * self.pan_speed;
+            self.target.x += right.x * self.pan_speed;
+            self.target.z += right.z * self.pan_speed;
             self.update_eye_position();
         }
         if window.is_key_down(KeyboardKey::KEY_E) {
-            self.target.x += right.x * self.pan_speed;
-            self.target.z += right.z * self.pan_speed;
+            self.target.x -= right.x * self.pan_speed;
+            self.target.z -= right.z * self.pan_speed;
             self.update_eye_position();
         }
 
         // Left/Right arrow keys for horizontal panning
         if window.is_key_down(KeyboardKey::KEY_LEFT) {
-            self.target.x -= right.x * self.pan_speed;
-            self.target.z -= right.z * self.pan_speed;
+            self.target.x += right.x * self.pan_speed;
+            self.target.z += right.z * self.pan_speed;
             self.update_eye_position();
         }
         if window.is_key_down(KeyboardKey::KEY_RIGHT) {
-            self.target.x += right.x * self.pan_speed;
-            self.target.z += right.z * self.pan_speed;
+            self.target.x -= right.x * self.pan_speed;
+            self.target.z -= right.z * self.pan_speed;
             self.update_eye_position();
         }
 
