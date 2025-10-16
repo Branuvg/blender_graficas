@@ -36,6 +36,10 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
     let b_y = v2.transformed_position.y;
     let c_y = v3.transformed_position.y;
 
+    let color_a = Vector3::new(1.0, 0.0, 0.0);
+    let color_b = Vector3::new(0.0, 1.0, 0.0);
+    let color_c = Vector3::new(0.0, 0.0, 1.0);
+
 
     let min_x = a_x.min(b_x).min(c_x).floor() as i32;
     let min_y = a_y.min(b_y).min(c_y).floor() as i32;
@@ -48,9 +52,11 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
             let (w, v, u) = barycentric_coordinates(x  as f32, y as f32, v1, v2, v3);
 
             let normal = v1.normal;
-            let color = Vector3::new(1.0, 0.0, 0.0);
+            let depth = v1.transformed_position.z;
+            //let color = Vector3::new(1.0, 0.0, 0.0);
+            let color = color_a * w + color_b * v + color_c * u;
 
-            let intensity = normal.dot(light.position.normalized());
+            let intensity = normal.dot(light.position.normalized()).max(0.0);
 
             let final_color = color * intensity;
 
@@ -59,7 +65,7 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
                     x as f32,
                     y as f32,
                     final_color,
-                    v1.transformed_position.z,
+                    depth,
                 ));
             }
         }
