@@ -3,6 +3,7 @@ use crate::fragment::Fragment;
 use crate::vertex::Vertex;
 use crate::line::line;
 use crate::Vector3;
+use crate::light::Light;
 
 fn barycentric_coordinates(p_x: f32, p_y: f32, a: &Vertex, b: &Vertex, c: &Vertex)  -> (f32, f32, f32) {
     let a_x = a.transformed_position.x;   
@@ -25,7 +26,7 @@ fn barycentric_coordinates(p_x: f32, p_y: f32, a: &Vertex, b: &Vertex, c: &Verte
     (w, v, u)
 }
 
-pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
+pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fragment> {
     let mut fragments = Vec::new();
 
     let a_x = v1.transformed_position.x;
@@ -46,12 +47,19 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex) -> Vec<Fragment> {
         for x in min_x..=max_x {
             let (w, v, u) = barycentric_coordinates(x  as f32, y as f32, v1, v2, v3);
 
+            let normal = v1.normal;
+            let color = Vector3::new(1.0, 0.0, 0.0);
+
+            let intensity = normal.dot(light.position.normalized());
+
+            let final_color = color * intensity;
+
             if w >= 0.0 && v >= 0.0 && u >= 0.0 {
                 fragments.push(Fragment::new(
                     x as f32,
                     y as f32,
-                    Vector3::new(0.5, 0.5, 0.5),
-                    0.0,
+                    final_color,
+                    v1.transformed_position.z,
                 ));
             }
         }

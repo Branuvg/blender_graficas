@@ -8,6 +8,7 @@ mod fragment;
 mod vertex;
 mod camera;
 mod shaders;
+mod light;
 
 use triangle::triangle;
 use obj::Obj;
@@ -20,6 +21,7 @@ use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matr
 use vertex::Vertex;
 use camera::Camera;
 use shaders::vertex_shader;
+use light::Light;
 
 pub struct Uniforms {
     pub model_matrix: Matrix,
@@ -28,7 +30,7 @@ pub struct Uniforms {
     pub viewport_matrix: Matrix,
 }
 
-fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]) {
+fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], light: &Light) {
     // Vertex Shader Stage
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
     for vertex in vertex_array {
@@ -51,7 +53,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
     // Rasterization Stage
     let mut fragments = Vec::new();
     for tri in &triangles {
-        fragments.extend(triangle(&tri[0], &tri[1], &tri[2]));
+        fragments.extend(triangle(&tri[0], &tri[1], &tri[2], light));
     }
 
     // Fragment Processing Stage
@@ -63,6 +65,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
             framebuffer.point(
                 fragment.position.x as i32,
                 fragment.position.y as i32,
+                fragment.depth,
                 fragment.color,
             );
         }
@@ -87,6 +90,9 @@ fn main() {
         Vector3::new(0.0, 0.0, 0.0), // target
         Vector3::new(0.0, 1.0, 0.0), // up
     );
+
+    // Light
+    let light = Light::new(Vector3::new(5.0, 5.0, -5.0));
 
     // Parámetros de transformación del modelo (fijos)
     let translation = Vector3::new(0.0, 0.0, 0.0);
@@ -120,7 +126,7 @@ fn main() {
             viewport_matrix,
         };
 
-        render(&mut framebuffer, &uniforms, &vertex_array);
+        render(&mut framebuffer, &uniforms, &vertex_array, &light);
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
         
