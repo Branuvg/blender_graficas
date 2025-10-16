@@ -12,8 +12,8 @@ use framebuffer::Framebuffer;
 use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
-//use std::f32::consts::PI;
-use matrix::{create_model_matrix, multiply_matrix_vector4, create_view_matrix};
+use std::f32::consts::PI;
+use matrix::{create_model_matrix, multiply_matrix_vector4, create_view_matrix, create_projection_matrix};
 
 fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector3) -> Vector3 {
     let model : Matrix = create_model_matrix(translation, scale, rotation);
@@ -23,6 +23,8 @@ fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector
         Vector3::new(0.0, 0.0, 0.0),
         Vector3::new(0.0, 1.0, 0.1),
     );
+
+    let projection : Matrix = create_projection_matrix(PI / 3.0, 1300.0 / 900.0, 0.1, 100.0); // fov_y, aspect (window_width / window_height), near, far
     
     let vertex4 = Vector4::new(vertex.x, vertex.y, vertex.z, 1.0);
     
@@ -30,7 +32,9 @@ fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector
     
     let view_transform = multiply_matrix_vector4(&view, &world_transform);
     
-    let transformed_vertex4 = view_transform;
+    let projection_transform = multiply_matrix_vector4(&projection, &view_transform);
+    
+    let transformed_vertex4 = projection_transform;
     
     let transformed_vertex3 = Vector3::new(transformed_vertex4.x / transformed_vertex4.w, transformed_vertex4.y / transformed_vertex4.w, transformed_vertex4.z / transformed_vertex4.w);
     
@@ -64,7 +68,7 @@ fn main() {
         .build();
 
     let mut framebuffer = Framebuffer::new(window_width, window_height);
-    let mut translation = Vector3::new(800.0, 600.0, 0.0); // traslación original
+    let mut translation = Vector3::new(0.0, 0.0, 0.0); // traslación original
     let mut scale = 100.0; // escala original
     let mut rotation = Vector3::new(0.0, 0.0, 0.0); // rotación original
 

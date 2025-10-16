@@ -143,3 +143,19 @@ pub fn create_view_matrix(eye: Vector3, target: Vector3, up: Vector3) -> Matrix 
         0.0, 0.0, 0.0, 1.0,
     )
 }
+
+/// Creates a perspective projection matrix
+/// fov_y: Field of view in radians (vertical)
+/// aspect: Aspect ratio (width / height)
+/// near: Near clipping plane distance
+/// far: Far clipping plane distance
+pub fn create_projection_matrix(fov_y: f32, aspect: f32, near: f32, far: f32) -> Matrix {
+    let tan_half_fov = (fov_y / 2.0).tan();
+
+    new_matrix4(
+        1.0 / (aspect * tan_half_fov), 0.0, 0.0, 0.0,
+        0.0, 1.0 / tan_half_fov, 0.0, 0.0,
+        0.0, 0.0, -(far + near) / (far - near), -(2.0 * far * near) / (far - near),
+        0.0, 0.0, -1.0, 0.0,
+    )
+}
