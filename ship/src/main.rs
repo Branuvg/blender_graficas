@@ -6,8 +6,8 @@ mod obj;
 mod matrix;
 mod fragment;
 mod vertex;
-mod uniforms;
 mod camera;
+mod shaders;
 
 use triangle::triangle;
 use obj::Obj;
@@ -16,38 +16,16 @@ use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
 use std::f32::consts::PI;
-use matrix::{create_model_matrix, multiply_matrix_vector4, create_projection_matrix, create_viewport_matrix};
+use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix};
 use vertex::Vertex;
-use uniforms::Uniforms;
 use camera::Camera;
+use shaders::vertex_shader;
 
-// Vertex Shader: Transforma vértices usando matrices
-fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
-    let mut result = vertex.clone();
-    
-    // Convertir a Vector4 para transformaciones
-    let vertex4 = Vector4::new(
-        vertex.position.x, 
-        vertex.position.y, 
-        vertex.position.z, 
-        1.0
-    );
-    
-    // Aplicar transformaciones: Model -> View -> Projection -> Viewport
-    let world_transform = multiply_matrix_vector4(&uniforms.model, &vertex4);
-    let view_transform = multiply_matrix_vector4(&uniforms.view, &world_transform);
-    let projection_transform = multiply_matrix_vector4(&uniforms.projection, &view_transform);
-    let viewport_transform = multiply_matrix_vector4(&uniforms.viewport, &projection_transform);
-    
-    // División perspectiva
-    let transformed_vertex3 = Vector3::new(
-        viewport_transform.x / viewport_transform.w,
-        viewport_transform.y / viewport_transform.w,
-        viewport_transform.z / viewport_transform.w
-    );
-    
-    result.transformed_position = transformed_vertex3;
-    result
+pub struct Uniforms {
+    pub model_matrix: Matrix,
+    pub view_matrix: Matrix,
+    pub projection_matrix: Matrix,
+    pub viewport_matrix: Matrix,
 }
 
 fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]) {
@@ -82,9 +60,10 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
         if fragment.position.x >= 0.0 && fragment.position.x < framebuffer.width as f32 &&
            fragment.position.y >= 0.0 && fragment.position.y < framebuffer.height as f32 {
             
-            framebuffer.set_pixel(
+            framebuffer.point(
                 fragment.position.x as i32,
                 fragment.position.y as i32,
+                fragment.color,
             );
         }
     }
@@ -116,11 +95,8 @@ fn main() {
 
     let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
     
-    // Convertir Vector3 a Vertex
-    let vertex_array: Vec<Vertex> = obj.get_vertex_array()
-        .iter()
-        .map(|v| Vertex::new(*v))
-        .collect();
+    // vertex_array ya es Vec<Vertex> gracias a los cambios en obj.rs
+    let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
@@ -138,10 +114,10 @@ fn main() {
 
         // Crear uniforms
         let uniforms = Uniforms {
-            model: model_matrix,
-            view: view_matrix,
-            projection: projection_matrix,
-            viewport: viewport_matrix,
+            model_matrix,
+            view_matrix,
+            projection_matrix,
+            viewport_matrix,
         };
 
         render(&mut framebuffer, &uniforms, &vertex_array);
