@@ -1,5 +1,4 @@
 // main.rs
-
 mod framebuffer;
 mod line;
 mod triangle;
@@ -13,7 +12,7 @@ use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
 use std::f32::consts::PI;
-use matrix::{create_model_matrix, multiply_matrix_vector4, create_view_matrix, create_projection_matrix};
+use matrix::{create_model_matrix, multiply_matrix_vector4, create_view_matrix, create_projection_matrix, create_viewport_matrix};
 
 fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector3) -> Vector3 {
     let model : Matrix = create_model_matrix(translation, scale, rotation);
@@ -25,6 +24,8 @@ fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector
     );
 
     let projection : Matrix = create_projection_matrix(PI / 3.0, 1300.0 / 900.0, 0.1, 100.0); // fov_y, aspect (window_width / window_height), near, far
+
+    let viewport : Matrix = create_viewport_matrix(0.0, 0.0, 1300.0, 900.0); // x, y, width, height
     
     let vertex4 = Vector4::new(vertex.x, vertex.y, vertex.z, 1.0);
     
@@ -34,7 +35,9 @@ fn transform(vertex: Vector3, translation: Vector3, scale: f32, rotation: Vector
     
     let projection_transform = multiply_matrix_vector4(&projection, &view_transform);
     
-    let transformed_vertex4 = projection_transform;
+    let viewport_transform = multiply_matrix_vector4(&viewport, &projection_transform);
+    
+    let transformed_vertex4 = viewport_transform;
     
     let transformed_vertex3 = Vector3::new(transformed_vertex4.x / transformed_vertex4.w, transformed_vertex4.y / transformed_vertex4.w, transformed_vertex4.z / transformed_vertex4.w);
     
@@ -69,7 +72,7 @@ fn main() {
 
     let mut framebuffer = Framebuffer::new(window_width, window_height);
     let mut translation = Vector3::new(0.0, 0.0, 0.0); // traslación original
-    let mut scale = 100.0; // escala original
+    let mut scale = 0.2; // escala original
     let mut rotation = Vector3::new(0.0, 0.0, 0.0); // rotación original
 
     let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
@@ -82,16 +85,16 @@ fn main() {
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
         
         if window.is_key_down(KeyboardKey::KEY_RIGHT) {
-            translation.x += 10.0;
+            translation.x -= 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_LEFT) {
-            translation.x -= 10.0;
+            translation.x += 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_UP) {
-            translation.y -= 10.0;
+            translation.y -= 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_DOWN) {
-            translation.y += 10.0;
+            translation.y += 0.1;
         }
         if window.is_key_down(KeyboardKey::KEY_S) {
             scale *= 1.1;
