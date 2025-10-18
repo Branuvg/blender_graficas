@@ -36,10 +36,9 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
     let b_y = v2.transformed_position.y;
     let c_y = v3.transformed_position.y;
 
-    let color_a = Vector3::new(1.0, 0.0, 0.0);
+/*     let color_a = Vector3::new(1.0, 0.0, 0.0);
     let color_b = Vector3::new(0.0, 1.0, 0.0);
-    let color_c = Vector3::new(0.0, 0.0, 1.0);
-
+    let color_c = Vector3::new(0.0, 0.0, 1.0); */
 
     let min_x = a_x.min(b_x).min(c_x).floor() as i32;
     let min_y = a_y.min(b_y).min(c_y).floor() as i32;

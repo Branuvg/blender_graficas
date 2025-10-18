@@ -62,3 +62,20 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
     transformed_normal: vertex.normal, // Note: Correct normal transformation is more complex
   }
 }
+
+fn transform_normal(normal: &Vector3, model_matrix: &Matrix) -> Vector3 {
+    // Convierte el normal a coordenadas homogéneas (añade coordenada w = 0.0)
+    let normal_vec4 = Vector4::new(normal.x, normal.y, normal.z, 0.0);
+
+    let transformed_normal_vec4 = multiply_matrix_vector4(model_matrix, &normal_vec4);
+
+    // Convierte de vuelta a Vector3 y normaliza
+    let mut transformed_normal = Vector3::new(
+        transformed_normal_vec4.x,
+        transformed_normal_vec4.y,
+        transformed_normal_vec4.z,
+    );
+    
+    transformed_normal.normalize();
+    transformed_normal
+}
