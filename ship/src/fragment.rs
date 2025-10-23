@@ -3,6 +3,8 @@
 
 use raylib::math::{Vector2, Vector3};
 
+//Todos los valores estan interpolados
+
 pub struct Fragment {
     pub position: Vector2,
     pub color: Vector3,

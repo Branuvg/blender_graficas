@@ -57,18 +57,13 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
     }
 
     // Fragment Processing Stage
-    for fragment in fragments {
-        // Verificar que el fragment esté dentro de los límites del framebuffer
-        if fragment.position.x >= 0.0 && fragment.position.x < framebuffer.width as f32 &&
-           fragment.position.y >= 0.0 && fragment.position.y < framebuffer.height as f32 {
-            
-            framebuffer.point(
-                fragment.position.x as i32,
-                fragment.position.y as i32,
-                fragment.depth,
-                fragment.color,
-            );
-        }
+    for fragment in fragments {            
+        framebuffer.point(
+            fragment.position.x as i32,
+            fragment.position.y as i32,
+            fragment.depth,
+            fragment.color,
+        );
     }
 }
 

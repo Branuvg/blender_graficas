@@ -2,16 +2,7 @@
 use raylib::prelude::*;
 use crate::vertex::Vertex;
 use crate::Uniforms;
-
-// This function manually multiplies a 4x4 matrix with a 4D vector (in homogeneous coordinates)
-fn multiply_matrix_vector4(matrix: &Matrix, vector: &Vector4) -> Vector4 {
-    Vector4::new(
-        matrix.m0 * vector.x + matrix.m4 * vector.y + matrix.m8 * vector.z + matrix.m12 * vector.w,
-        matrix.m1 * vector.x + matrix.m5 * vector.y + matrix.m9 * vector.z + matrix.m13 * vector.w,
-        matrix.m2 * vector.x + matrix.m6 * vector.y + matrix.m10 * vector.z + matrix.m14 * vector.w,
-        matrix.m3 * vector.x + matrix.m7 * vector.y + matrix.m11 * vector.z + matrix.m15 * vector.w,
-    )
-}
+use crate::matrix::multiply_matrix_vector4;
 
 pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
   // Convert vertex position to homogeneous coordinates (Vec4) by adding a w-component of 1.0
@@ -41,26 +32,26 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
   } else {
       Vector3::new(clip_position.x, clip_position.y, clip_position.z)
   };
-
+  
   // Apply Viewport transformation to get screen coordinates
   let ndc_vec4 = Vector4::new(ndc.x, ndc.y, ndc.z, 1.0);
   let screen_position = multiply_matrix_vector4(&uniforms.viewport_matrix, &ndc_vec4);
-
+  
   let transformed_position = Vector3::new(
       screen_position.x,
       screen_position.y,
       screen_position.z,
-  );
-
-  // Create a new Vertex with the transformed position
-  Vertex {
+    );
+    
+    // Create a new Vertex with the transformed position
+    Vertex {
     position: vertex.position,
     normal: vertex.normal,
     tex_coords: vertex.tex_coords,
     color: vertex.color,
     transformed_position,
-    transformed_normal: vertex.normal, // Note: Correct normal transformation is more complex
-  }
+    transformed_normal: transform_normal(&vertex.normal, &uniforms.model_matrix),
+    }
 }
 
 fn transform_normal(normal: &Vector3, model_matrix: &Matrix) -> Vector3 {

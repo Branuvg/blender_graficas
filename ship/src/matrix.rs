@@ -7,7 +7,6 @@ pub fn multiply_matrix_vector4(matrix: &Matrix, vector: &Vector4) -> Vector4 {
     Vector4::new(
         matrix.m0 * vector.x + matrix.m4 * vector.y + matrix.m8 * vector.z + matrix.m12 * vector.w,
         matrix.m1 * vector.x + matrix.m5 * vector.y + matrix.m9 * vector.z + matrix.m13 * vector.w,
-        // This function manually multiplies a 4x4 matrix with a 4D vector (in homogeneous coordinates)
         matrix.m2 * vector.x + matrix.m6 * vector.y + matrix.m10 * vector.z + matrix.m14 * vector.w,
         matrix.m3 * vector.x + matrix.m7 * vector.y + matrix.m11 * vector.z + matrix.m15 * vector.w,
     )
