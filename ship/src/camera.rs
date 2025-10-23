@@ -27,7 +27,7 @@ impl Camera {
         // Calculate initial yaw and pitch from eye and target
         let direction = Vector3::new(
             eye.x - target.x,
-            eye.y - target.y,
+            eye.y - target.y,   
             eye.z - target.z,
         );
 

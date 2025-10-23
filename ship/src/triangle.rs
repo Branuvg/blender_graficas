@@ -108,7 +108,7 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
                 // Interpolate depth using barycentric coordinates
                 let depth = w1 * v1.transformed_position.z + w2 * v2.transformed_position.z + w3 * v3.transformed_position.z;
 
-                fragments.push(Fragment::new(p_x, p_y, base_color, depth));
+                fragments.push(Fragment::new(p_x, p_y, shaded_color, depth));
             }
         }
     }
