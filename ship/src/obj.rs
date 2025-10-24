@@ -23,7 +23,7 @@ impl Obj {
                 let x = mesh.positions[i * 3];
                 let y = mesh.positions[i * 3 + 1];
                 let z = mesh.positions[i * 3 + 2];
-                let position = Vector3::new(x, -y, z);
+                let position = Vector3::new(x, y, z);
 
                 let normal = if !mesh.normals.is_empty() {
                     let nx = mesh.normals[i * 3];
