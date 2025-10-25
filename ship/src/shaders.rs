@@ -75,15 +75,16 @@ fn transform_normal(normal: &Vector3, model_matrix: &Matrix) -> Vector3 {
 
 // receives fragment -> returns color
 pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+    let pos = fragment.world_position;
     let base_color = fragment.color;
     
-    let x_pattern = (fragment.world_position.x * 10.0).sin() * 0.5 + 0.5;
-    let y_pattern = (fragment.world_position.y * 10.0).sin() * 0.5 + 0.5;
+    let distance = (pos.x * pos.x + pos.y * pos.y + pos.z * pos.z).sqrt();
+    let gradient = (distance * 20.0).sin() * 0.5 + 0.5;
     
     let pattern_color = Vector3::new(
-        x_pattern,
-        y_pattern,
-        0.0,
+        gradient,  // r
+        1.0 - gradient, // g
+        gradient,  // b
     );
     
     base_color * 0.5 + pattern_color * 0.5
