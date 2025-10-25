@@ -1,6 +1,5 @@
 // main.rs
 mod framebuffer;
-mod line;
 mod triangle;
 mod obj;
 mod matrix;
@@ -20,7 +19,7 @@ use std::f32::consts::PI;
 use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix};
 use vertex::Vertex;
 use camera::Camera;
-use shaders::vertex_shader;
+use shaders::{vertex_shader, fragment_shader};
 use light::Light;
 
 pub struct Uniforms {
@@ -57,12 +56,15 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
     }
 
     // Fragment Processing Stage
-    for fragment in fragments {            
+    for fragment in fragments {      
+        
+        let final_color = fragment_shader(&fragment, uniforms);
+        
         framebuffer.point(
             fragment.position.x as i32,
             fragment.position.y as i32,
+            final_color,
             fragment.depth,
-            fragment.color,
         );
     }
 }

@@ -3,6 +3,8 @@ use raylib::prelude::*;
 use crate::vertex::Vertex;
 use crate::Uniforms;
 use crate::matrix::multiply_matrix_vector4;
+use crate::fragment::Fragment;
+use rand::random;
 
 pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
   // Convert vertex position to homogeneous coordinates (Vec4) by adding a w-component of 1.0
@@ -69,4 +71,20 @@ fn transform_normal(normal: &Vector3, model_matrix: &Matrix) -> Vector3 {
     
     transformed_normal.normalize();
     transformed_normal
+}
+
+// receives fragment -> returns color
+pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+    let base_color = fragment.color;
+    
+    let x_pattern = (fragment.world_position.x * 10.0).sin() * 0.5 + 0.5;
+    let y_pattern = (fragment.world_position.y * 10.0).sin() * 0.5 + 0.5;
+    
+    let pattern_color = Vector3::new(
+        x_pattern,
+        y_pattern,
+        0.0,
+    );
+    
+    base_color * 0.5 + pattern_color * 0.5
 }

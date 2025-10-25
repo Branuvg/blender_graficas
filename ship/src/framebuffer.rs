@@ -36,7 +36,7 @@ impl Framebuffer {
         }
     }
     
-    pub fn point(&mut self, x: i32, y: i32, depth: f32, color: Vector3) {
+    pub fn point(&mut self, x: i32, y: i32, color: Vector3, depth: f32) {
         if x >= 0 && x < self.width && y >= 0 && y < self.height {
             let index = (y * self.width + x) as usize;
 
