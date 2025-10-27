@@ -79,14 +79,14 @@ pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
     let base_color = fragment.color;
     let time = uniforms.time;
     
-    let distance = (pos.x * pos.x + pos.y * pos.y + pos.z * pos.z).sqrt();
-    let gradient = (distance * (time%20.0)).sin() * 0.5 + 0.5;
-    
-    let pattern_color = Vector3::new(
-        gradient,  // r
-        1.0 - gradient, // g
-        gradient,  // b
-    );
+    let stripe1 = Vector3::new(1.0, 3.0, 1.0);
+    let stripe2 = Vector3::new(0.1, 2.0, 0.1);
+    let frecuency = 1.0;
+    let animated_y = pos.y + time;
+
+    let selector = ((animated_y * frecuency).floor() % 2.0).abs();
+
+    let pattern_color = stripe1 * selector + stripe2 * (1.0 - selector);
     
     base_color * 0.5 + pattern_color * 0.5
 }
