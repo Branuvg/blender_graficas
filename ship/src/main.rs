@@ -98,7 +98,7 @@ fn main() {
     // Light
     let light = Light::new(Vector3::new(5.0, 5.0, 5.0));
 
-    let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
+    let obj = Obj::load("./models/sphere-1.obj").expect("Failed to load obj");
     let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
