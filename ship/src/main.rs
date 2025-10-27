@@ -19,9 +19,10 @@ use std::f32::consts::PI;
 use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix};
 use vertex::Vertex;
 use camera::Camera;
-use shaders::{vertex_shader, fragment_shader};
+use shaders::{vertex_shader, fragment_shader, render_rings, render_moon};
 use light::Light;
 
+#[derive(Clone)]
 pub struct Uniforms {
     pub model_matrix: Matrix,
     pub view_matrix: Matrix,
@@ -29,13 +30,18 @@ pub struct Uniforms {
     pub viewport_matrix: Matrix,
     pub time: f32, // elapsed time in seconds
     pub dt: f32, // delta time in seconds
+    pub planet_type: i32, // 0: rocky, 1: gaseous, 2: custom, 3-4: extra planets
+    pub render_type: i32, // 0: planet, 1: rings, 2: moon
 }
 
-fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], light: &Light) {
+fn render_planet(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], light: &Light) {
     // Vertex Shader Stage
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
+    let mut planet_uniforms = uniforms.clone();
+    planet_uniforms.render_type = 0; // planet
+    
     for vertex in vertex_array {
-        let transformed = vertex_shader(vertex, uniforms);
+        let transformed = vertex_shader(vertex, &planet_uniforms);
         transformed_vertices.push(transformed);
     }
 
@@ -59,7 +65,6 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
 
     // Fragment Processing Stage
     for fragment in fragments {      
-        
         let final_color = fragment_shader(&fragment, uniforms);
         
         framebuffer.point(
@@ -77,7 +82,7 @@ fn main() {
 
     let (mut window, raylib_thread) = raylib::init()
         .size(window_width, window_height)
-        .title("Ship")
+        .title("Planet Shaders with Rings and Moon")
         .log_level(TraceLogLevel::LOG_WARNING)
         .build();
 
@@ -85,7 +90,7 @@ fn main() {
     
     // Inicializar cámara
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 5.0), // eye
+        Vector3::new(0.0, 0.0, 8.0), // eye - más lejos para ver anillos y luna
         Vector3::new(0.0, 0.0, 0.0), // target
         Vector3::new(0.0, 1.0, 0.0), // up
     );
@@ -104,10 +109,28 @@ fn main() {
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
     let mut time = 0.0;
+    let mut planet_type = 0; // Start with rocky planet
 
     while !window.window_should_close() {
         let dt = window.get_frame_time();
         time += dt;
+        
+        // Handle keyboard input for planet switching
+        if window.is_key_pressed(KeyboardKey::KEY_ONE) {
+            planet_type = 0; // Rocky planet
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_TWO) {
+            planet_type = 1; // Gaseous planet
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_THREE) {
+            planet_type = 2; // Custom planet
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_FOUR) {
+            planet_type = 3; // Extra planet 1
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_FIVE) {
+            planet_type = 4; // Extra planet 2
+        }
         
         camera.process_input(&window);
         
@@ -120,17 +143,26 @@ fn main() {
         let projection_matrix = create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0);
         let viewport_matrix = create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32);
 
-        // Crear uniforms
-        let uniforms = Uniforms {
+        // Renderizar el planeta principal
+        let planet_uniforms = Uniforms {
             model_matrix,
             view_matrix,
             projection_matrix,
             viewport_matrix,
             time,
             dt,
+            planet_type,
+            render_type: 0, // planet
         };
+        render_planet(&mut framebuffer, &planet_uniforms, &vertex_array, &light);
 
-        render(&mut framebuffer, &uniforms, &vertex_array, &light);
+        // Renderizar anillos si el planeta es el de anillos (tipo 3)
+        if planet_type == 3 {
+            render_rings(&mut framebuffer, &planet_uniforms, &vertex_array, &light);
+        }
+
+        // Renderizar luna
+        render_moon(&mut framebuffer, &planet_uniforms, &vertex_array, &light);
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
         

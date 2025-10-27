@@ -1,4 +1,3 @@
-// triangle.rs
 use crate::fragment::Fragment;
 use crate::vertex::Vertex;
 use crate::light::Light;
@@ -27,11 +26,6 @@ fn barycentric_coordinates(p_x: f32, p_y: f32, a: &Vertex, b: &Vertex, c: &Verte
 
 pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fragment> {
     let mut fragments = Vec::new();
-    
-/*     //rgb colors demo
-    let color_a = Vector3::new(1.0, 0.0, 0.0);
-    let color_b = Vector3::new(0.0, 1.0, 0.0);
-    let color_c = Vector3::new(0.0, 0.0, 1.0);  */
 
     let base_color = Vector3::new(0.5, 0.5, 0.5);
 
@@ -49,13 +43,6 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
             let (w1, w2, w3) = barycentric_coordinates(p_x, p_y, v1, v2, v3);
 
             if w1 >= 0.0 && w2 >= 0.0 && w3 >= 0.0 {
-
-/*                 //Interpolate rgb demo
-                let interpolated_color = Vector3::new(
-                    w1 * color_a.x + w2 * color_b.x + w3 * color_c.x,
-                    w1 * color_a.y + w2 * color_b.y + w3 * color_c.y,
-                    w1 * color_a.z + w2 * color_b.z + w3 * color_c.z,
-                ); */
 
                 // Interpolate normals using barycentric coordinates
                 let interpolated_normal = Vector3::new(
@@ -96,7 +83,7 @@ pub fn triangle(v1: &Vertex, v2: &Vertex, v3: &Vertex, light: &Light) -> Vec<Fra
                     light_dir.z /= light_length;
                 }
 
-                // Calculate per-fragment lighting intesnsity isuign interpolated normal and light direction
+                // Calculate per-fragment lighting intensity using interpolated normal and light direction
                 let intensity = (normalized_normal.x * light_dir.x + normalized_normal.y * light_dir.y + normalized_normal.z * light_dir.z).max(0.0);
 
                 let shaded_color = Vector3::new(
