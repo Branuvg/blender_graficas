@@ -27,6 +27,8 @@ pub struct Uniforms {
     pub view_matrix: Matrix,
     pub projection_matrix: Matrix,
     pub viewport_matrix: Matrix,
+    pub time: f32, // elapsed time in seconds
+    pub dt: f32, // delta time in seconds
 }
 
 fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], light: &Light) {
@@ -88,22 +90,25 @@ fn main() {
         Vector3::new(0.0, 1.0, 0.0), // up
     );
 
-    // Light
-    let light = Light::new(Vector3::new(5.0, 5.0, 5.0));
-
     // Parámetros de transformación del modelo (fijos)
     let translation = Vector3::new(0.0, 0.0, 0.0);
     let scale = 1.0;
     let rotation = Vector3::new(0.0, 0.0, 0.0);
 
+    // Light
+    let light = Light::new(Vector3::new(5.0, 5.0, 5.0));
+
     let obj = Obj::load("./models/cube.obj").expect("Failed to load obj");
-    
-    // vertex_array ya es Vec<Vertex> gracias a los cambios en obj.rs
     let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
+    let mut time = 0.0;
+
     while !window.window_should_close() {
+        let dt = window.get_frame_time();
+        time += dt;
+        
         camera.process_input(&window);
         
         framebuffer.clear();
@@ -121,6 +126,8 @@ fn main() {
             view_matrix,
             projection_matrix,
             viewport_matrix,
+            time,
+            dt,
         };
 
         render(&mut framebuffer, &uniforms, &vertex_array, &light);
