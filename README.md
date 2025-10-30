@@ -1,6 +1,6 @@
-# Planet Shader Renderer
+# Planet Shader Renderer (Laboratorio 4)
 
-Un renderizador 3D de planetas con diferentes tipos de superficies, anillos y luna, implementado en Rust con shaders personalizados. (fotos de los planetas estan abajo)
+Un renderizador 3D de planetas con diferentes tipos de superficies, anillos y luna, implementado en Rust con shaders personalizados. (fotos de los planetas estan abajo). Este branch esta dedicado para el laboratorio 4 de graficas.
 
 ## Controles de la Cámara
 
