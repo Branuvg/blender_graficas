@@ -19,60 +19,59 @@ fn transform_normal(normal: &Vector3, model_matrix: &Matrix) -> Vector3 {
     transformed_normal
 }
 
-// Implementación de una función de ruido tipo Perlin simplificada
-fn perlin_noise_3d(x: f32, y: f32, z: f32, time: f32) -> f32 {
-    // Función de ruido pseudoaleatorio más suave que la trigonométrica
-    let x = x + time * 0.3;
-    let y = y + time * 0.2;
-    let z = z + time * 0.1;
+// Función de ruido para crear arcos de fuego más pronunciados con movimiento rápido
+fn fire_arc_noise(x: f32, y: f32, z: f32, time: f32) -> f32 {
+    // Movimiento más rápido en las funciones de ruido
+    let n1 = (x * 2.0 + time * 1.5).sin() * (y * 1.5 + time * 1.2).cos() + 
+             (y * 2.0 + time * 1.4).sin() * (z * 1.8 + time * 1.1).cos() +
+             (z * 2.0 + time * 1.3).sin() * (x * 1.6 + time * 1.3).cos();
     
-    // Combinación de funciones trigonométricas con pesos diferentes
-    let n = (x.sin() * 7.3 + y.cos() * 5.1 + z.sin() * 3.7 + 
-             x.cos() * y.sin() * 2.3 + y.cos() * z.sin() * 1.9 + 
-             x.sin() * z.cos() * 1.1).sin();
+    // Función gaussiana para crear "arcos" más definidos
+    let gaussian = (-((x*x + y*y + z*z) * 0.5)).exp();
     
-    // Normalizar al rango [0, 1]
-    (n + 1.0) * 0.5
+    // Combinar para crear estructuras lineales con mayor contraste
+    let arc_structure = (n1 * 2.0).sin() * gaussian * 0.7 + 0.3;
+    
+    arc_structure
 }
 
-// Función de ruido fractal (multi-octave) tipo Perlin
-fn fractal_noise(x: f32, y: f32, z: f32, time: f32) -> f32 {
+// Función de ruido fractal para mayor detalle con movimiento rápido
+fn fractal_fire_noise(x: f32, y: f32, z: f32, time: f32) -> f32 {
     let mut value = 0.0;
-    let mut amplitude = 0.5;
+    let mut amplitude = 1.0;
     let mut frequency = 1.0;
-    let mut total_amplitude = 0.0;
     
-    // 4 octavas para efecto más detallado
-    for i in 0..4 {
-        let noise_val = perlin_noise_3d(x * frequency, y * frequency, z * frequency, time + (i as f32) * 100.0);
+    for i in 0..3 {
+        // Movimiento más rápido en cada octava
+        let adjusted_time = time * 2.0 + (i as f32) * 50.0;
+        let noise_val = fire_arc_noise(x * frequency, y * frequency, z * frequency, adjusted_time);
         value += noise_val * amplitude;
-        total_amplitude += amplitude;
-        
-        amplitude *= 0.5;
+        amplitude *= 0.6;
         frequency *= 2.0;
     }
     
-    value / total_amplitude
+    value / 2.8 // Normalizar
 }
 
 pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
-    let position_vec4 = Vector4::new(
+    let _position_vec4 = Vector4::new(
         vertex.position.x,
         vertex.position.y,
         vertex.position.z,
         1.0
     );
 
-    // Calcular ruido para distorsión del vertex
     let time = uniforms.time;
-    let noise_amount = fractal_noise(
-        vertex.position.x * 2.0, 
-        vertex.position.y * 2.0, 
-        vertex.position.z * 2.0, 
-        time
-    ) * 0.1; // Pequeña distorsión para efecto de turbulencia
     
-    // Aplicar distorsión basada en ruido
+    // Movimiento más rápido en la distorsión del vertex
+    let noise_amount = fractal_fire_noise(
+        vertex.position.x * 1.5, 
+        vertex.position.y * 1.5, 
+        vertex.position.z * 1.5, 
+        time * 2.0  // Movimiento más rápido aquí también
+    ) * 0.08; // Distorsión moderada para efecto de arcos
+    
+    // Aplicar distorsión en dirección normal para mantener forma esférica
     let distorted_pos = Vector3::new(
         vertex.position.x + vertex.normal.x * noise_amount,
         vertex.position.y + vertex.normal.y * noise_amount,
@@ -116,9 +115,8 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
         screen_position.z,
     );
     
-    // Create a new Vertex with the transformed position
     Vertex {
-        position: vertex.position, // Mantener la posición original para cálculos
+        position: vertex.position,
         normal: vertex.normal,
         tex_coords: vertex.tex_coords,
         color: vertex.color,
@@ -131,44 +129,55 @@ pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
     let pos = fragment.world_position;
     let time = uniforms.time;
     
-    // Calcular ruido fractal para efectos solares
-    let turbulence = fractal_noise(pos.x, pos.y, pos.z, time);
-    let turbulence_detail = fractal_noise(pos.x * 4.0, pos.y * 4.0, pos.z * 4.0, time * 2.0) * 0.3;
-    
-    // Efecto de pulsación cíclica para simular actividad solar
-    let solar_activity = (time * 0.8).sin().abs() * 0.3 + 0.7;
-    
-    // Calcular distancia desde el centro para efectos de capas
+    // Calcular la distancia desde el centro para efectos radiales
     let distance_from_center = pos.length();
     
-    // Gradientes de temperatura de estrella realista
-    // De rojo intenso (núcleo) a amarillo/blanco (superficie)
-    let temperature_factor = if distance_from_center < 0.8 {
-        // Interior más rojo
-        let t = distance_from_center / 0.8;
-        Vector3::new(1.0, 0.2 + 0.3 * t, 0.1 + 0.2 * t)
+    // Normalizar la posición para efectos direccionales
+    let length = pos.length();
+    let normalized_pos = if length > 0.0 {
+        Vector3::new(pos.x / length, pos.y / length, pos.z / length)
     } else {
-        // Superficie más amarilla
-        let t = (distance_from_center - 0.8) / 0.2;
-        let t_clamped = t.min(1.0);
-        Vector3::new(1.0, 0.5 + 0.5 * (1.0 - t_clamped), 0.2 + 0.3 * (1.0 - t_clamped))
+        Vector3::new(0.0, 0.0, 1.0)
     };
     
-    // Efecto de emisión variable (simular picos de energía)
-    let emission_pulse = (time * 2.5 + pos.x * 10.0 + pos.y * 8.0).sin().abs() * 0.4;
-    let emission_spikes = fractal_noise(pos.x * 8.0, pos.y * 8.0, pos.z * 8.0, time * 3.0) * 0.6;
+    // Efecto de "arcos de fuego" - estructuras lineales prominentes con movimiento rápido
+    let fire_arcs = fractal_fire_noise(normalized_pos.x, normalized_pos.y, normalized_pos.z, time * 2.0); // Movimiento 2x más rápido
     
-    // Combinar todos los efectos
-    let final_intensity = (turbulence * 1.2 + turbulence_detail + solar_activity * 0.8 + 
-                          emission_pulse + emission_spikes * 0.5) * 0.7;
+    // Efecto de pulsación solar global con movimiento rápido
+    let solar_pulse = (time * 2.0).sin().abs() * 0.3 + 0.7; // 4x más rápido que antes
     
-    // Color final combinando temperatura y efectos
-    let final_color = temperature_factor * final_intensity;
+    // Efecto radial para mantener forma esférica (reducir el negro)
+    let sphere_effect = 1.0 - (distance_from_center - 0.9).abs().min(0.1) * 5.0; // Menos oscuro
+    let edge_glow = (distance_from_center - 0.85).max(0.0) * 2.0; // Brillo en los bordes
     
-    // Asegurar que los valores estén en el rango [0, 1] y añadir brillo adicional
+    // Gradiente de temperatura de estrella (más caliente en el centro)
+    let temperature = if distance_from_center < 0.8 {
+        // Interior rojo intenso
+        Vector3::new(1.0, 0.4, 0.2)
+    } else if distance_from_center < 0.9 {
+        // Superficie naranja
+        Vector3::new(1.0, 0.6, 0.3)
+    } else {
+        // Coroa amarilla
+        Vector3::new(1.0, 0.8, 0.4)
+    };
+    
+    // Intensidad de los arcos de fuego (menos picos pero más altos)
+    let arc_intensity = fire_arcs * 2.0; // Mayor intensidad para arcos prominentes
+    let arc_bright = (arc_intensity - 0.6).max(0.0) * 4.0; // Solo los picos más altos brillan mucho
+    
+    // Combinar efectos
+    let base_intensity = sphere_effect * solar_pulse + edge_glow * 0.5;
+    let total_intensity = base_intensity + arc_bright * 0.8;
+    
+    // Color final con arcos de fuego prominentes
+    let final_color = temperature * total_intensity + 
+                     Vector3::new(1.0, 0.95, 0.7) * arc_bright * 0.6; // Luz blanca/amarilla muy brillante para los arcos
+    
+    // Asegurar valores máximos y mantener realismo, pero reducir el negro
     Vector3::new(
-        (final_color.x * 1.2).min(1.0),
-        (final_color.y * 1.1).min(1.0),
-        final_color.z.min(1.0),
+        (final_color.x).min(1.0).max(0.1),  // Mínimo 0.1 para evitar negro
+        (final_color.y * 0.95).min(1.0).max(0.1),  // Mínimo 0.1 para evitar negro
+        (final_color.z * 0.8).min(1.0).max(0.1),  // Mínimo 0.1 para evitar negro
     )
 }
