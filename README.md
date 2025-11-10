@@ -1,4 +1,4 @@
-# Simulación de Estrella con Shaders
+# Lab 5: Dynamic Shaders
 
 ## Descripción
 
