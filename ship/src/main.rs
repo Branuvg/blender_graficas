@@ -77,7 +77,7 @@ fn main() {
 
     let (mut window, raylib_thread) = raylib::init()
         .size(window_width, window_height)
-        .title("Ship")
+        .title("Proyecto 3 - Graficas")
         .log_level(TraceLogLevel::LOG_WARNING)
         .build();
 
@@ -85,18 +85,18 @@ fn main() {
     
     // Inicializar cámara
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 5.0), // eye
+        Vector3::new(0.0, 0.0, 75.0), // eye
         Vector3::new(0.0, 0.0, 0.0), // target
         Vector3::new(0.0, 1.0, 0.0), // up
     );
 
     // Parámetros de transformación del modelo (fijos)
     let translation = Vector3::new(0.0, 0.0, 0.0);
-    let scale = 1.0;
+    let scale = 15.0;
     let rotation = Vector3::new(0.0, 0.0, 0.0);
 
     // Light
-    let light = Light::new(Vector3::new(5.0, 5.0, 5.0));
+    let light = Light::new(Vector3::new(0.0, 0.0, 0.0));
 
     let obj = Obj::load("./models/sphere.obj").expect("Failed to load obj");
     let vertex_array = obj.get_vertex_array();

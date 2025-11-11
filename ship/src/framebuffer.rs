@@ -47,14 +47,6 @@ impl Framebuffer {
         }
     }
     
-    pub fn get_pixel_color(&mut self, x: i32, y: i32) -> Option<Color> {
-        if x >= 0 && x < self.width && y >= 0 && y < self.height {
-            Some(self.color_buffer.get_color(x, y))
-        } else {
-            None
-        }
-    }
-
     pub fn set_background_color(&mut self, color: Color) {
         self.background_color = color;
     }
