@@ -160,6 +160,80 @@ struct CelestialBody {
     color: Color,
 }
 
+// Función para verificar colisión entre dos esferas
+fn check_collision(pos1: Vector3, radius1: f32, pos2: Vector3, radius2: f32) -> bool {
+    let distance = ((pos1.x - pos2.x).powi(2) + (pos1.y - pos2.y).powi(2) + (pos1.z - pos2.z).powi(2)).sqrt();
+    distance < (radius1 + radius2)
+}
+
+// Función para evitar colisiones
+fn avoid_collision(camera_pos: Vector3, target_pos: Vector3, celestial_bodies: &[CelestialBody], time: f32) -> (Vector3, Vector3) {
+    let mut new_camera_pos = camera_pos;
+    let mut new_target_pos = target_pos;
+    
+    // Verificar colisiones con cada cuerpo celeste
+    for body in celestial_bodies {
+        let body_pos = if body.name != "Sun" {
+            // Calcular posición actual del planeta en su órbita
+            let x = (time * body.orbit_speed).cos() * body.orbit_radius;
+            let z = (time * body.orbit_speed).sin() * body.orbit_radius;
+            Vector3::new(x, 0.0, z)
+        } else {
+            body.translation // Posición del sol
+        };
+        
+        // Calcular radios efectivos (considerando el tamaño del cuerpo)
+        let camera_radius = 2.0; // Radio de colisión de la cámara
+        let body_radius = body.scale * 0.8; // Radio de colisión del cuerpo celeste
+        
+        // Verificar si hay colisión con la cámara
+        if check_collision(new_camera_pos, camera_radius, body_pos, body_radius) {
+            // Calcular vector de separación
+            let diff_x = new_camera_pos.x - body_pos.x;
+            let diff_y = new_camera_pos.y - body_pos.y;
+            let diff_z = new_camera_pos.z - body_pos.z;
+            let distance = (diff_x.powi(2) + diff_y.powi(2) + diff_z.powi(2)).sqrt();
+            
+            if distance > 0.0 {
+                // Normalizar el vector de separación
+                let norm_x = diff_x / distance;
+                let norm_y = diff_y / distance;
+                let norm_z = diff_z / distance;
+                
+                // Calcular nueva posición para evitar la colisión
+                let min_distance = body_radius + camera_radius;
+                new_camera_pos.x = body_pos.x + norm_x * min_distance;
+                new_camera_pos.y = body_pos.y + norm_y * min_distance;
+                new_camera_pos.z = body_pos.z + norm_z * min_distance;
+            }
+        }
+        
+        // Verificar si hay colisión con el punto de mira
+        if check_collision(new_target_pos, camera_radius, body_pos, body_radius) {
+            // Calcular vector de separación
+            let diff_x = new_target_pos.x - body_pos.x;
+            let diff_y = new_target_pos.y - body_pos.y;
+            let diff_z = new_target_pos.z - body_pos.z;
+            let distance = (diff_x.powi(2) + diff_y.powi(2) + diff_z.powi(2)).sqrt();
+            
+            if distance > 0.0 {
+                // Normalizar el vector de separación
+                let norm_x = diff_x / distance;
+                let norm_y = diff_y / distance;
+                let norm_z = diff_z / distance;
+                
+                // Calcular nueva posición para evitar la colisión
+                let min_distance = body_radius + camera_radius;
+                new_target_pos.x = body_pos.x + norm_x * min_distance;
+                new_target_pos.y = body_pos.y + norm_y * min_distance;
+                new_target_pos.z = body_pos.z + norm_z * min_distance;
+            }
+        }
+    }
+    
+    (new_camera_pos, new_target_pos)
+}
+
 fn main() {
     let window_width = 1300;
     let window_height = 900;
@@ -313,7 +387,13 @@ fn main() {
             );
         }
         
+        // Procesar entrada de cámara con movimiento 3D
         camera.process_input(&window);
+        
+        // Verificar colisiones y ajustar la posición de la cámara si es necesario
+        let (adjusted_eye, adjusted_target) = avoid_collision(camera.eye, camera.target, &celestial_bodies, time);
+        camera.eye = adjusted_eye;
+        camera.target = adjusted_target;
         
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
