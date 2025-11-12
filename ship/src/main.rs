@@ -18,7 +18,7 @@ use std::f32::consts::PI;
 use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix};
 use vertex::Vertex;
 use camera::Camera;
-use shaders::{vertex_shader, fragment_shader, mercury_fragment_shader, sun_fragment_shader};
+use shaders::{vertex_shader, fragment_shader, mercury_fragment_shader, sun_fragment_shader, earth_fragment_shader, mars_fragment_shader, uranus_fragment_shader};
 use light::Light;
 
 pub struct Uniforms {
@@ -61,7 +61,10 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
         let final_color = match planet_type {
             "Sun" => sun_fragment_shader(&fragment, uniforms),
             "Mercury" => mercury_fragment_shader(&fragment, uniforms),
-            _ => fragment_shader(&fragment, uniforms), // Default to sun shader
+            "Earth" => earth_fragment_shader(&fragment, uniforms),
+            "Mars" => mars_fragment_shader(&fragment, uniforms),
+            "Uranus" => uranus_fragment_shader(&fragment, uniforms),
+            _ => fragment_shader(&fragment, uniforms), // Default to simple shader
         };
         
         framebuffer.point(
@@ -134,7 +137,40 @@ fn main() {
         color: Color::new(169, 169, 169, 255), // Gray for Mercury
     };
 
-    let celestial_bodies = vec![sun, mercury];
+    let earth = CelestialBody {
+        name: "Earth".to_string(),
+        translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
+        scale: 3.0, 
+        rotation: Vector3::new(0.0, 0.0, 0.0),
+        orbit_radius: 25.0, // Distance from sun
+        orbit_speed: 0.5, // Orbital speed
+        rotation_speed: 1.5, // Rotation speed on its axis
+        color: Color::new(0, 100, 200, 255), // Blue for Earth
+    };
+
+    let mars = CelestialBody {
+        name: "Mars".to_string(),
+        translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
+        scale: 2.5, 
+        rotation: Vector3::new(0.0, 0.0, 0.0),
+        orbit_radius: 35.0, // Distance from sun
+        orbit_speed: 0.3, // Orbital speed
+        rotation_speed: 1.2, // Rotation speed on its axis
+        color: Color::new(205, 92, 92, 255), // Red for Mars
+    };
+
+    let uranus = CelestialBody {
+        name: "Uranus".to_string(),
+        translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
+        scale: 5.0, 
+        rotation: Vector3::new(0.0, 0.0, 0.0),
+        orbit_radius: 45.0, // Distance from sun
+        orbit_speed: 0.1, // Orbital speed
+        rotation_speed: 0.8, // Rotation speed on its axis
+        color: Color::new(173, 216, 230, 255), // Light blue for Uranus
+    };
+
+    let celestial_bodies = vec![sun, mercury, earth, mars, uranus];
 
     let mut time = 0.0;
 

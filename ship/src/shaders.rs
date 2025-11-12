@@ -189,3 +189,105 @@ pub fn mercury_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vect
         final_color.z.clamp(0.0, 1.0),
     )
 }
+
+// Shader específico para la Tierra con océanos y continentes
+pub fn earth_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+    let pos = fragment.world_position;
+    let time = uniforms.time;
+    
+    // Patrón de continentes y océanos
+    let land_pattern = (pos.x * 5.0 + time * 0.2).sin() * (pos.z * 3.0).cos();
+    let cloud_pattern = (pos.x * 8.0 + time * 0.3).cos() * (pos.y * 6.0).sin();
+    
+    // Colores base de la Tierra
+    let ocean_color = Vector3::new(0.1, 0.3, 0.7);     // Azul oscuro para océanos
+    let land_color = Vector3::new(0.2, 0.6, 0.2);      // Verde para continentes
+    let cloud_color = Vector3::new(0.9, 0.95, 1.0);    // Blanco para nubes
+    
+    // Determinar si es tierra, agua o nubes
+    let is_land = (land_pattern * 0.7 + 0.3).max(0.0).min(1.0);
+    let is_cloud = (cloud_pattern * 0.4 + 0.6).max(0.0).min(1.0);
+    
+    // Mezclar colores
+    let base_color = ocean_color * (1.0 - is_land) + land_color * is_land;
+    let final_color = base_color * (1.0 - is_cloud * 0.4) + cloud_color * is_cloud * 0.4;
+    
+    // Efecto sutil de iluminación
+    let lighting = (pos.y * 0.5 + 0.5).max(0.3);
+    let lit_color = final_color * lighting;
+    
+    // Asegurar que los valores estén en el rango [0, 1]
+    Vector3::new(
+        lit_color.x.clamp(0.0, 1.0),
+        lit_color.y.clamp(0.0, 1.0),
+        lit_color.z.clamp(0.0, 1.0),
+    )
+}
+
+// Shader específico para Marte con su característica roja
+pub fn mars_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+    let pos = fragment.world_position;
+    let time = uniforms.time;
+    
+    // Simular terreno rocoso y polvoriento de Marte
+    let terrain_pattern = (pos.x * 6.0 + time * 0.1).sin() * (pos.z * 4.0).cos();
+    let dust_pattern = (pos.x * 12.0 + pos.y * 8.0).sin() * (pos.z * 10.0).cos();
+    
+    // Colores base de Marte
+    let base_color = Vector3::new(0.8, 0.4, 0.2);      // Rojo anaranjado base
+    let dark_rock = Vector3::new(0.6, 0.3, 0.15);      // Zonas rocosas oscuras
+    let light_dust = Vector3::new(0.9, 0.6, 0.3);      // Zonas con polvo claro
+    
+    // Aplicar patrones de terreno
+    let terrain_factor = (terrain_pattern * 0.5 + 0.5).max(0.0).min(1.0);
+    let dust_factor = (dust_pattern * 0.3 + 0.7).max(0.0).min(1.0);
+    
+    // Mezclar colores según el terreno
+    let rocky_surface = base_color * (1.0 - terrain_factor) + dark_rock * terrain_factor;
+    let dusty_surface = rocky_surface * (1.0 - dust_factor) + light_dust * dust_factor;
+    
+    // Efecto sutil de iluminación
+    let lighting = (pos.y * 0.5 + 0.5).max(0.2);
+    let lit_color = dusty_surface * lighting;
+    
+    // Asegurar que los valores estén en el rango [0, 1]
+    Vector3::new(
+        lit_color.x.clamp(0.0, 1.0),
+        lit_color.y.clamp(0.0, 1.0),
+        lit_color.z.clamp(0.0, 1.0),
+    )
+}
+
+// Shader específico para Urano con su característico color azul verdoso
+pub fn uranus_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+    let pos = fragment.world_position;
+    let time = uniforms.time;
+    
+    // Simular bandas atmosféricas de Urano
+    let band_pattern = (pos.y * 8.0 + time * 0.1).sin();
+    let cloud_pattern = (pos.x * 6.0 + pos.z * 4.0 + time * 0.2).cos();
+    
+    // Colores base de Urano
+    let base_color = Vector3::new(0.6, 0.8, 0.9);      // Azul verdoso característico
+    let band_color = Vector3::new(0.5, 0.7, 0.85);     // Bandas más oscuras
+    let cloud_color = Vector3::new(0.7, 0.85, 0.95);   // Nubes más claras
+    
+    // Aplicar patrones de bandas y nubes
+    let band_factor = (band_pattern * 0.4 + 0.6).max(0.0).min(1.0);
+    let cloud_factor = (cloud_pattern * 0.3 + 0.7).max(0.0).min(1.0);
+    
+    // Mezclar colores según los patrones
+    let banded_surface = base_color * (1.0 - band_factor) + band_color * band_factor;
+    let final_surface = banded_surface * (1.0 - cloud_factor * 0.3) + cloud_color * cloud_factor * 0.3;
+    
+    // Efecto sutil de iluminación
+    let lighting = (pos.y * 0.3 + 0.7).max(0.4);
+    let lit_color = final_surface * lighting;
+    
+    // Asegurar que los valores estén en el rango [0, 1]
+    Vector3::new(
+        lit_color.x.clamp(0.0, 1.0),
+        lit_color.y.clamp(0.0, 1.0),
+        lit_color.z.clamp(0.0, 1.0),
+    )
+}
