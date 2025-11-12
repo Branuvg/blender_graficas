@@ -171,11 +171,16 @@ fn main() {
 
     let mut framebuffer = Framebuffer::new(window_width, window_height);
     
+    // Posición inicial de la cámara
+    let initial_camera_pos = Vector3::new(0.0, 20.0, 75.0);
+    let initial_camera_target = Vector3::new(0.0, 0.0, 0.0);
+    let initial_camera_up = Vector3::new(0.0, 1.0, 0.0);
+    
     // Inicializar cámara
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 50.0), // eye
-        Vector3::new(0.0, 0.0, 0.0), // target
-        Vector3::new(0.0, 1.0, 0.0), // up
+        initial_camera_pos,
+        initial_camera_target,
+        initial_camera_up,
     );
 
     // Light
@@ -189,7 +194,7 @@ fn main() {
     let sun = CelestialBody {
         name: "Sun".to_string(),
         translation: Vector3::new(0.0, 0.0, 0.0),
-        scale: 10.0,
+        scale: 15.0,
         rotation: Vector3::new(0.0, 0.0, 0.0),
         orbit_radius: 0.0,  // No orbit for the sun
         orbit_speed: 0.0,
@@ -202,7 +207,7 @@ fn main() {
         translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
         scale: 2.0, 
         rotation: Vector3::new(0.0, 0.0, 0.0),
-        orbit_radius: 12.0, // Distance from sun
+        orbit_radius: 15.0, // Distance from sun
         orbit_speed: 0.8, // Orbital speed
         rotation_speed: 2.0, // Rotation speed on its axis
         color: Color::new(169, 169, 169, 255), // Gray for Mercury
@@ -241,13 +246,70 @@ fn main() {
         color: Color::new(173, 216, 230, 255), // Light blue for Uranus
     };
 
-    let celestial_bodies = vec![sun, mercury, earth, mars, uranus];
+    let celestial_bodies = vec![sun, mercury.clone(), earth.clone(), mars.clone(), uranus.clone()];
 
     let mut time = 0.0;
 
     while !window.window_should_close() {
         let dt = window.get_frame_time();
         time += dt;
+        
+        // Verificar teclas para teletransportación
+        if window.is_key_pressed(KeyboardKey::KEY_ONE) {
+            // Vista 1: Estado inicial de la cámara
+            camera = Camera::new(
+                initial_camera_pos,
+                initial_camera_target,
+                initial_camera_up,
+            );
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_TWO) {
+            // Vista 2: Sistema solar desde arriba
+            camera = Camera::new(
+                Vector3::new(0.0, 100.0, 0.0), // eye
+                Vector3::new(0.0, 0.0, 0.0), // target
+                Vector3::new(0.0, 0.0, -1.0), // up
+            );
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_THREE) {
+            // Vista 3: Cercana a la Tierra (posición en la órbita mirando al centro)
+            // Calcular posición de la cámara en la órbita de la Tierra, alejada del sol
+            let camera_distance = earth.orbit_radius + 20.0; // Distancia desde el sol
+            let camera_x = (time * earth.orbit_speed).cos() * camera_distance;
+            let camera_z = (time * earth.orbit_speed).sin() * camera_distance;
+            
+            camera = Camera::new(
+                Vector3::new(camera_x, 20.0, camera_z), // eye
+                Vector3::new(0.0, -15.0, 0.0), // target (centro del sistema solar)
+                Vector3::new(0.0, 1.0, 0.0), // up
+            );
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_FOUR) {
+            // Vista 4: Cercana a Marte (posición en la órbita mirando al centro)
+            // Calcular posición de la cámara en la órbita de Marte, alejada del sol
+            let camera_distance = mars.orbit_radius + 20.0; // Distancia desde el sol
+            let camera_x = (time * mars.orbit_speed).cos() * camera_distance;
+            let camera_z = (time * mars.orbit_speed).sin() * camera_distance;
+            
+            camera = Camera::new(
+                Vector3::new(camera_x, 15.0, camera_z), // eye
+                Vector3::new(0.0, -10.0, 0.0), // target (centro del sistema solar)
+                Vector3::new(0.0, 1.0, 0.0), // up
+            );
+        }
+        if window.is_key_pressed(KeyboardKey::KEY_FIVE) {
+            // Vista 5: Cercana a Urano (posición en la órbita mirando al centro)
+            // Calcular posición de la cámara en la órbita de Urano, alejada del sol
+            let camera_distance = uranus.orbit_radius + 20.0; // Distancia desde el sol
+            let camera_x = (time * uranus.orbit_speed).cos() * camera_distance;
+            let camera_z = (time * uranus.orbit_speed).sin() * camera_distance;
+            
+            camera = Camera::new(
+                Vector3::new(camera_x, 10.0, camera_z), // eye
+                Vector3::new(0.0, -5.0, 0.0), // target (centro del sistema solar)
+                Vector3::new(0.0, 1.0, 0.0), // up
+            );
+        }
         
         camera.process_input(&window);
         
