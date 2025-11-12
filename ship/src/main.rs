@@ -18,7 +18,7 @@ use std::f32::consts::PI;
 use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix};
 use vertex::Vertex;
 use camera::Camera;
-use shaders::{vertex_shader, fragment_shader};
+use shaders::{vertex_shader, fragment_shader, mercury_fragment_shader, sun_fragment_shader};
 use light::Light;
 
 pub struct Uniforms {
@@ -30,7 +30,7 @@ pub struct Uniforms {
     pub dt: f32, // delta time in seconds
 }
 
-fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], light: &Light) {
+fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], light: &Light, planet_type: &str) {
     // Vertex Shader Stage
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
     for vertex in vertex_array {
@@ -58,13 +58,16 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
 
     // Fragment Processing Stage
     for fragment in fragments {      
-        
-        let final_color = fragment_shader(&fragment, uniforms);
+        let final_color = match planet_type {
+            "Sun" => sun_fragment_shader(&fragment, uniforms),
+            "Mercury" => mercury_fragment_shader(&fragment, uniforms),
+            _ => fragment_shader(&fragment, uniforms), // Default to sun shader
+        };
         
         framebuffer.point(
             fragment.position.x as i32,
             fragment.position.y as i32,
-            final_color, //poner fragment.color si no se quiere nada de shading
+            final_color, //poner fragment.color si no se quiere nada de shading 
             fragment.depth,
         );
     }
@@ -102,14 +105,13 @@ fn main() {
     );
 
     // Light
-    let light = Light::new(Vector3::new(0.0, 0.0, 0.0));
+    let light = Light::new(Vector3::new(0.0, 0.0, 0.0)); // fix light
 
     let obj = Obj::load("./models/sphere.obj").expect("Failed to load obj");
     let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
-    // Crear el sol y Venus
     let sun = CelestialBody {
         name: "Sun".to_string(),
         translation: Vector3::new(0.0, 0.0, 0.0),
@@ -121,18 +123,18 @@ fn main() {
         color: Color::new(255, 255, 0, 255), // Yellow for sun
     };
 
-    let venus = CelestialBody {
-        name: "Venus".to_string(),
+    let mercury = CelestialBody {
+        name: "Mercury".to_string(),
         translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
-        scale: 3.0, // Smaller than sun
+        scale: 2.0, 
         rotation: Vector3::new(0.0, 0.0, 0.0),
-        orbit_radius: 25.0, // Distance from sun
-        orbit_speed: 0.3, // Orbital speed
-        rotation_speed: 0.7, // Rotation speed on its axis
-        color: Color::new(255, 165, 0, 255), // Orange for Venus
+        orbit_radius: 12.0, // Distance from sun
+        orbit_speed: 0.8, // Orbital speed
+        rotation_speed: 2.0, // Rotation speed on its axis
+        color: Color::new(169, 169, 169, 255), // Gray for Mercury
     };
 
-    let celestial_bodies = vec![sun, venus];
+    let celestial_bodies = vec![sun, mercury];
 
     let mut time = 0.0;
 
@@ -179,7 +181,7 @@ fn main() {
                 dt,
             };
 
-            render(&mut framebuffer, &uniforms, &vertex_array, &light);
+            render(&mut framebuffer, &uniforms, &vertex_array, &light, &body.name);
         }
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);

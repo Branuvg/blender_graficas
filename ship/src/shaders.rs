@@ -1,4 +1,3 @@
-// shaders.rs
 use raylib::prelude::*;
 use crate::vertex::Vertex;
 use crate::Uniforms;
@@ -83,7 +82,14 @@ fn solar_noise(x: f32, y: f32, z: f32, time: f32) -> f32 {
     (n1 * 0.5 + n2 * 0.3 + n3 * 0.2).abs()
 }
 
-pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+// Shader simple para cualquier objeto que no tenga un shader específico
+pub fn fragment_shader(fragment: &Fragment, _uniforms: &Uniforms) -> Vector3 {
+    // Color gris simple para ahorrar recursos
+    fragment.color
+}
+
+// Shader específico para el sol con efectos complejos
+pub fn sun_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
     let pos = fragment.world_position;
     let time = uniforms.time;
     
@@ -131,6 +137,50 @@ pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
     // Combinar todo para el color final
     let final_color = base_color * intensity * (1.0 - flare_effect * 0.3) + 
                      Vector3::new(1.0, 1.0, 0.8) * flare_effect * 0.7;
+    
+    // Asegurar que los valores estén en el rango [0, 1]
+    Vector3::new(
+        final_color.x.clamp(0.0, 1.0),
+        final_color.y.clamp(0.0, 1.0),
+        final_color.z.clamp(0.0, 1.0),
+    )
+}
+
+// Nuevo shader específico para Mercurio
+pub fn mercury_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+    let pos = fragment.world_position;
+    let time = uniforms.time;
+    
+    // Simular cráteres y superficie rocosa de Mercurio
+    let crater_pattern = (pos.x * 8.0).sin() * (pos.y * 8.0).cos() * (pos.z * 8.0).sin();
+    let crater_depth = (crater_pattern * 0.5 + 0.5).powf(3.0); // Cráteres más pronunciados
+    
+    // Textura rocosa con variaciones
+    let surface_noise = (pos.x * 15.0 + pos.z * 10.0).sin() * (pos.y * 12.0).cos();
+    let rocky_pattern = (surface_noise * 0.3 + 0.7).abs();
+    
+    // Colores base de Mercurio (tonos grises rocosos)
+    let dark_surface = Vector3::new(0.3, 0.3, 0.35);   // Gris oscuro de llanuras
+    let light_surface = Vector3::new(0.55, 0.5, 0.48); // Gris claro de zonas elevadas
+    let crater_color = Vector3::new(0.2, 0.2, 0.22);   // Gris muy oscuro de cráteres
+    
+    // Mezclar colores según profundidad de cráteres
+    let base_color = if crater_depth < 0.3 {
+        // Dentro de un cráter
+        crater_color * (1.0 - crater_depth * 2.0) + dark_surface * crater_depth * 2.0
+    } else {
+        // Superficie normal
+        dark_surface * (1.0 - crater_depth) + light_surface * crater_depth
+    };
+    
+    // Aplicar textura rocosa
+    let textured_color = base_color * rocky_pattern;
+    
+    // Efecto sutil de reflejo solar en zonas expuestas (Mercurio está muy cerca del sol)
+    let sun_exposure = (pos.y + 1.0) * 0.5; // Zonas superiores más iluminadas
+    let sun_reflection = Vector3::new(0.7, 0.65, 0.6) * sun_exposure * 0.15;
+    
+    let final_color = textured_color + sun_reflection;
     
     // Asegurar que los valores estén en el rango [0, 1]
     Vector3::new(
