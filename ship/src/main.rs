@@ -65,7 +65,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
         framebuffer.point(
             fragment.position.x as i32,
             fragment.position.y as i32,
-            final_color,
+            final_color, //poner fragment.color si no se quiere nada de shading
             fragment.depth,
         );
     }
@@ -85,15 +85,15 @@ fn main() {
     
     // Inicializar cámara
     let mut camera = Camera::new(
-        Vector3::new(0.0, 0.0, 75.0), // eye
+        Vector3::new(0.0, 0.0, 50.0), // eye
         Vector3::new(0.0, 0.0, 0.0), // target
         Vector3::new(0.0, 1.0, 0.0), // up
     );
 
     // Parámetros de transformación del modelo (fijos)
     let translation = Vector3::new(0.0, 0.0, 0.0);
-    let scale = 15.0;
-    let rotation = Vector3::new(0.0, 0.0, 0.0);
+    let scale = 10.0;
+    let mut rotation = Vector3::new(0.0, 0.0, 0.0);
 
     // Light
     let light = Light::new(Vector3::new(0.0, 0.0, 0.0));
@@ -113,6 +113,9 @@ fn main() {
         
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
+        
+        // Update sun rotation (rotates around Y axis)
+        rotation.y += dt * 0.5; // Adjust the 0.5 value to change rotation speed
         
         // Crear matrices de transformación
         let model_matrix = create_model_matrix(translation, scale, rotation);
