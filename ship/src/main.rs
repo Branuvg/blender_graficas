@@ -78,13 +78,17 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
 
 // Función para dibujar una órbita circular en 3D
 fn draw_orbit_3d(framebuffer: &mut Framebuffer, orbit_radius: f32, orbit_color: Color, view_matrix: &Matrix, projection_matrix: &Matrix, viewport_matrix: &Matrix) {
-    let segments = 64; // Número de segmentos para dibujar el círculo
+    let segments = 128; // Aumentamos el número de segmentos para una línea más suave
     let angle_increment = 2.0 * PI / segments as f32;
     
     // Crear un vértice temporal para transformar puntos
     let mut prev_x = 0;
     let mut prev_y = 0;
     let mut first_point = true;
+    
+    // Guardar el primer punto para cerrar el círculo
+    let mut first_x = 0;
+    let mut first_y = 0;
     
     for i in 0..segments {
         let angle = i as f32 * angle_increment;
@@ -119,9 +123,16 @@ fn draw_orbit_3d(framebuffer: &mut Framebuffer, orbit_radius: f32, orbit_color: 
         let screen_x = screen_position.x as i32;
         let screen_y = screen_position.y as i32;
         
+        // Guardar el primer punto
+        if i == 0 {
+            first_x = screen_x;
+            first_y = screen_y;
+        }
+        
         // Dibujar línea desde el punto anterior al actual
         if !first_point {
-            framebuffer.draw_line(prev_x, prev_y, screen_x, screen_y, orbit_color);
+            // Dibujar la línea con una profundidad mayor (más lejos) que los planetas
+            framebuffer.draw_line_with_depth(prev_x, prev_y, screen_x, screen_y, orbit_color, 1000.0);
         } else {
             first_point = false;
         }
@@ -130,9 +141,9 @@ fn draw_orbit_3d(framebuffer: &mut Framebuffer, orbit_radius: f32, orbit_color: 
         prev_y = screen_y;
     }
     
-    // Cerrar el círculo
+    // Cerrar el círculo conectando el último punto con el primero
     if segments > 0 {
-        framebuffer.draw_line(prev_x, prev_y, prev_x, prev_y, orbit_color);
+        framebuffer.draw_line_with_depth(prev_x, prev_y, first_x, first_y, orbit_color, 1000.0);
     }
 }
 
@@ -191,7 +202,7 @@ fn main() {
         translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
         scale: 2.0, 
         rotation: Vector3::new(0.0, 0.0, 0.0),
-        orbit_radius: 13.0, // Distance from sun
+        orbit_radius: 12.0, // Distance from sun
         orbit_speed: 0.8, // Orbital speed
         rotation_speed: 2.0, // Rotation speed on its axis
         color: Color::new(169, 169, 169, 255), // Gray for Mercury
@@ -243,20 +254,7 @@ fn main() {
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
 
-        // Crear matrices de transformación comunes
-        let view_matrix = camera.get_view_matrix();
-        let projection_matrix = create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0);
-        let viewport_matrix = create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32);
-
-        // Dibujar las órbitas de los planetas en blanco
-        for body in &celestial_bodies {
-            if body.name != "Sun" {
-                let orbit_color = Color::new(255, 255, 255, 100); // Blanco con transparencia
-                draw_orbit_3d(&mut framebuffer, body.orbit_radius, orbit_color, &view_matrix, &projection_matrix, &viewport_matrix);
-            }
-        }
-
-        // Render each celestial body
+        // Render each celestial body FIRST
         for mut body in celestial_bodies.clone() {
             // Update orbital position for planets (not for the sun)
             if body.name != "Sun" {
@@ -291,6 +289,19 @@ fn main() {
             };
 
             render(&mut framebuffer, &uniforms, &vertex_array, &light, &body.name);
+        }
+
+        // Crear matrices de transformación comunes
+        let view_matrix = camera.get_view_matrix();
+        let projection_matrix = create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0);
+        let viewport_matrix = create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32);
+
+        // Dibujar las órbitas de los planetas en blanco AFTER rendering the planets
+        for body in &celestial_bodies {
+            if body.name != "Sun" {
+                let orbit_color = Color::new(255, 255, 255, 50); // Blanco con menor transparencia (más discreto)
+                draw_orbit_3d(&mut framebuffer, body.orbit_radius, orbit_color, &view_matrix, &projection_matrix, &viewport_matrix);
+            }
         }
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
