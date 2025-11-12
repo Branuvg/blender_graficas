@@ -15,7 +15,7 @@ use raylib::prelude::*;
 use std::thread;
 use std::time::Duration;
 use std::f32::consts::PI;
-use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix};
+use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix, multiply_matrix_vector4};
 use vertex::Vertex;
 use camera::Camera;
 use shaders::{vertex_shader, fragment_shader, mercury_fragment_shader, sun_fragment_shader, earth_fragment_shader, mars_fragment_shader, uranus_fragment_shader};
@@ -76,6 +76,66 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
     }
 }
 
+// Función para dibujar una órbita circular en 3D
+fn draw_orbit_3d(framebuffer: &mut Framebuffer, orbit_radius: f32, orbit_color: Color, view_matrix: &Matrix, projection_matrix: &Matrix, viewport_matrix: &Matrix) {
+    let segments = 64; // Número de segmentos para dibujar el círculo
+    let angle_increment = 2.0 * PI / segments as f32;
+    
+    // Crear un vértice temporal para transformar puntos
+    let mut prev_x = 0;
+    let mut prev_y = 0;
+    let mut first_point = true;
+    
+    for i in 0..segments {
+        let angle = i as f32 * angle_increment;
+        
+        // Punto en el círculo (en el plano XZ, Y=0)
+        let x = angle.cos() * orbit_radius;
+        let y = 0.0; // En el plano XZ
+        let z = angle.sin() * orbit_radius;
+        
+        // Transformar el punto a coordenadas de pantalla
+        let position_vec4 = Vector4::new(x, y, z, 1.0);
+        
+        // Aplicar transformaciones
+        let view_position = multiply_matrix_vector4(view_matrix, &position_vec4);
+        let clip_position = multiply_matrix_vector4(projection_matrix, &view_position);
+        
+        // Perspectiva division
+        let ndc = if clip_position.w != 0.0 {
+            Vector3::new(
+                clip_position.x / clip_position.w,
+                clip_position.y / clip_position.w,
+                clip_position.z / clip_position.w,
+            )
+        } else {
+            Vector3::new(clip_position.x, clip_position.y, clip_position.z)
+        };
+        
+        // Aplicar matriz de viewport
+        let ndc_vec4 = Vector4::new(ndc.x, ndc.y, ndc.z, 1.0);
+        let screen_position = multiply_matrix_vector4(viewport_matrix, &ndc_vec4);
+        
+        let screen_x = screen_position.x as i32;
+        let screen_y = screen_position.y as i32;
+        
+        // Dibujar línea desde el punto anterior al actual
+        if !first_point {
+            framebuffer.draw_line(prev_x, prev_y, screen_x, screen_y, orbit_color);
+        } else {
+            first_point = false;
+        }
+        
+        prev_x = screen_x;
+        prev_y = screen_y;
+    }
+    
+    // Cerrar el círculo
+    if segments > 0 {
+        framebuffer.draw_line(prev_x, prev_y, prev_x, prev_y, orbit_color);
+    }
+}
+
 #[derive(Clone)]
 struct CelestialBody {
     name: String,
@@ -131,7 +191,7 @@ fn main() {
         translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
         scale: 2.0, 
         rotation: Vector3::new(0.0, 0.0, 0.0),
-        orbit_radius: 12.0, // Distance from sun
+        orbit_radius: 13.0, // Distance from sun
         orbit_speed: 0.8, // Orbital speed
         rotation_speed: 2.0, // Rotation speed on its axis
         color: Color::new(169, 169, 169, 255), // Gray for Mercury
@@ -182,6 +242,19 @@ fn main() {
         
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
+
+        // Crear matrices de transformación comunes
+        let view_matrix = camera.get_view_matrix();
+        let projection_matrix = create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0);
+        let viewport_matrix = create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32);
+
+        // Dibujar las órbitas de los planetas en blanco
+        for body in &celestial_bodies {
+            if body.name != "Sun" {
+                let orbit_color = Color::new(255, 255, 255, 100); // Blanco con transparencia
+                draw_orbit_3d(&mut framebuffer, body.orbit_radius, orbit_color, &view_matrix, &projection_matrix, &viewport_matrix);
+            }
+        }
 
         // Render each celestial body
         for mut body in celestial_bodies.clone() {
