@@ -1,4 +1,3 @@
-//shaders.rs
 use raylib::prelude::*;
 use crate::vertex::Vertex;
 use crate::Uniforms;
@@ -290,5 +289,43 @@ pub fn uranus_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vecto
         lit_color.x.clamp(0.0, 1.0),
         lit_color.y.clamp(0.0, 1.0),
         lit_color.z.clamp(0.0, 1.0),
+    )
+}
+
+// Shader específico para la nave espacial
+pub fn nave_fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Vector3 {
+    let pos = fragment.world_position;
+    let time = uniforms.time;
+    
+    // Simular metal y detalles de la nave espacial
+    let metal_pattern = (pos.x * 10.0).sin() * (pos.y * 8.0).cos() * (pos.z * 6.0).sin();
+    let panel_pattern = (pos.x * 15.0 + pos.z * 10.0).sin() * (pos.y * 12.0).cos();
+    
+    // Colores base de la nave (tonos metálicos)
+    let base_color = Vector3::new(0.6, 0.6, 0.7);      // Gris metálico
+    let panel_color = Vector3::new(0.4, 0.45, 0.5);    // Panel más oscuro
+    let accent_color = Vector3::new(0.8, 0.8, 0.9);    // Detalles más claros
+    
+    // Aplicar patrones de superficie
+    let pattern_factor = (metal_pattern * 0.3 + 0.7).max(0.0).min(1.0);
+    let panel_factor = (panel_pattern * 0.2 + 0.8).max(0.0).min(1.0);
+    
+    // Mezclar colores según los patrones
+    let textured_surface = base_color * (1.0 - pattern_factor) + panel_color * pattern_factor;
+    let final_color = textured_surface * (1.0 - panel_factor * 0.2) + accent_color * panel_factor * 0.2;
+    
+    // Efecto de iluminación dinámica
+    let lighting = (pos.y * 0.4 + 0.6).max(0.3);
+    let lit_color = final_color * lighting;
+    
+    // Efecto de pulsación sutil para luces de la nave
+    let light_pulse = (time * 2.0).sin().abs() * 0.1 + 0.9;
+    let pulsed_color = Vector3::new(0.9, 0.95, 1.0) * light_pulse * 0.1 + lit_color * (1.0 - 0.1);
+    
+    // Asegurar que los valores estén en el rango [0, 1]
+    Vector3::new(
+        pulsed_color.x.clamp(0.0, 1.0),
+        pulsed_color.y.clamp(0.0, 1.0),
+        pulsed_color.z.clamp(0.0, 1.0),
     )
 }

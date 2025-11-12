@@ -1,4 +1,3 @@
-//main.rs
 mod framebuffer;
 mod triangle;
 mod obj;
@@ -19,7 +18,7 @@ use std::f32::consts::PI;
 use matrix::{create_model_matrix, create_projection_matrix, create_viewport_matrix, multiply_matrix_vector4};
 use vertex::Vertex;
 use camera::Camera;
-use shaders::{vertex_shader, fragment_shader, mercury_fragment_shader, sun_fragment_shader, earth_fragment_shader, mars_fragment_shader, uranus_fragment_shader};
+use shaders::{vertex_shader, fragment_shader, mercury_fragment_shader, sun_fragment_shader, earth_fragment_shader, mars_fragment_shader, uranus_fragment_shader, nave_fragment_shader};
 use light::Light;
 
 pub struct Uniforms {
@@ -65,6 +64,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
             "Earth" => earth_fragment_shader(&fragment, uniforms),
             "Mars" => mars_fragment_shader(&fragment, uniforms),
             "Uranus" => uranus_fragment_shader(&fragment, uniforms),
+            "Nave" => nave_fragment_shader(&fragment, uniforms),
             _ => fragment_shader(&fragment, uniforms), // Default to simple shader
         };
         
@@ -189,6 +189,10 @@ fn main() {
 
     let obj = Obj::load("./models/sphere.obj").expect("Failed to load obj");
     let vertex_array = obj.get_vertex_array();
+
+    // Cargar la nave espacial
+    let nave_obj = Obj::load("./models/nave.obj").expect("Failed to load nave.obj");
+    let nave_vertex_array = nave_obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
 
@@ -362,6 +366,43 @@ fn main() {
                 let orbit_color = Color::new(255, 255, 255, 50); // Blanco con menor transparencia (más discreto)
                 draw_orbit_3d(&mut framebuffer, body.orbit_radius, orbit_color, &view_matrix, &projection_matrix, &viewport_matrix);
             }
+        }
+
+        // Renderizar la nave espacial en su órbita angulada
+        {
+            // Calcular posición de la nave en su órbita
+            let nave_orbit_radius = 30.0; // Radio de la órbita de la nave
+            let nave_orbit_speed = 0.4; // Velocidad de la nave
+            let nave_angle = time * nave_orbit_speed;
+            
+            // Posición de la nave en su órbita angulada
+            let nave_x = nave_angle.cos() * nave_orbit_radius;
+            let nave_y = (nave_angle * 0.5).sin() * 10.0; // Movimiento vertical para crear órbita angulada
+            let nave_z = nave_angle.sin() * nave_orbit_radius;
+            
+            // Calcular rotación de la nave para que apunte en la dirección de movimiento
+            let rotation_y = nave_angle + PI / 2.0; // Ajustar para que apunte en la dirección correcta
+            let rotation_x = (nave_angle * 0.5).cos() * 0.2; // Pequeña rotación en X para seguir la órbita
+            
+            // Crear matriz de modelo para la nave
+            let nave_model_matrix = create_model_matrix(
+                Vector3::new(nave_x, nave_y, nave_z),
+                0.3, // Escala de la nave
+                Vector3::new(rotation_x, rotation_y, 0.0) // Rotación de la nave
+            );
+            
+            // Crear uniforms para la nave
+            let nave_uniforms = Uniforms {
+                model_matrix: nave_model_matrix,
+                view_matrix: camera.get_view_matrix(),
+                projection_matrix: create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0),
+                viewport_matrix: create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32),
+                time,
+                dt,
+            };
+            
+            // Renderizar la nave con su shader específico
+            render(&mut framebuffer, &nave_uniforms, &nave_vertex_array, &light, "Nave");
         }
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
