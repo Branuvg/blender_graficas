@@ -1,3 +1,4 @@
+//main.rs
 mod framebuffer;
 mod triangle;
 mod obj;
@@ -272,41 +273,38 @@ fn main() {
             );
         }
         if window.is_key_pressed(KeyboardKey::KEY_THREE) {
-            // Vista 3: Cercana a la Tierra (posición en la órbita mirando al centro)
-            // Calcular posición de la cámara en la órbita de la Tierra, alejada del sol
+            // Vista 3: Cercana a la Tierra 
             let camera_distance = earth.orbit_radius + 20.0; // Distancia desde el sol
             let camera_x = (time * earth.orbit_speed).cos() * camera_distance;
             let camera_z = (time * earth.orbit_speed).sin() * camera_distance;
             
             camera = Camera::new(
                 Vector3::new(camera_x, 20.0, camera_z), // eye
-                Vector3::new(0.0, -15.0, 0.0), // target (centro del sistema solar)
+                Vector3::new(0.0, -15.0, 0.0), // target
                 Vector3::new(0.0, 1.0, 0.0), // up
             );
         }
         if window.is_key_pressed(KeyboardKey::KEY_FOUR) {
-            // Vista 4: Cercana a Marte (posición en la órbita mirando al centro)
-            // Calcular posición de la cámara en la órbita de Marte, alejada del sol
+            // Vista 4: Cercana a Marte 
             let camera_distance = mars.orbit_radius + 20.0; // Distancia desde el sol
             let camera_x = (time * mars.orbit_speed).cos() * camera_distance;
             let camera_z = (time * mars.orbit_speed).sin() * camera_distance;
             
             camera = Camera::new(
                 Vector3::new(camera_x, 15.0, camera_z), // eye
-                Vector3::new(0.0, -10.0, 0.0), // target (centro del sistema solar)
+                Vector3::new(0.0, -10.0, 0.0), // target
                 Vector3::new(0.0, 1.0, 0.0), // up
             );
         }
         if window.is_key_pressed(KeyboardKey::KEY_FIVE) {
-            // Vista 5: Cercana a Urano (posición en la órbita mirando al centro)
-            // Calcular posición de la cámara en la órbita de Urano, alejada del sol
+            // Vista 5: Cercana a Urano
             let camera_distance = uranus.orbit_radius + 20.0; // Distancia desde el sol
             let camera_x = (time * uranus.orbit_speed).cos() * camera_distance;
             let camera_z = (time * uranus.orbit_speed).sin() * camera_distance;
             
             camera = Camera::new(
                 Vector3::new(camera_x, 10.0, camera_z), // eye
-                Vector3::new(0.0, -5.0, 0.0), // target (centro del sistema solar)
+                Vector3::new(0.0, -5.0, 0.0), // target
                 Vector3::new(0.0, 1.0, 0.0), // up
             );
         }
