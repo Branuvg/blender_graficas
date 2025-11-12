@@ -1,4 +1,3 @@
-// main.rs
 mod framebuffer;
 mod triangle;
 mod obj;
@@ -71,6 +70,18 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
     }
 }
 
+#[derive(Clone)]
+struct CelestialBody {
+    name: String,
+    translation: Vector3,
+    scale: f32,
+    rotation: Vector3,
+    orbit_radius: f32,
+    orbit_speed: f32,
+    rotation_speed: f32,
+    color: Color,
+}
+
 fn main() {
     let window_width = 1300;
     let window_height = 900;
@@ -90,11 +101,6 @@ fn main() {
         Vector3::new(0.0, 1.0, 0.0), // up
     );
 
-    // Parámetros de transformación del modelo (fijos)
-    let translation = Vector3::new(0.0, 0.0, 0.0);
-    let scale = 10.0;
-    let mut rotation = Vector3::new(0.0, 0.0, 0.0);
-
     // Light
     let light = Light::new(Vector3::new(0.0, 0.0, 0.0));
 
@@ -102,6 +108,31 @@ fn main() {
     let vertex_array = obj.get_vertex_array();
 
     framebuffer.set_background_color(Color::new(25, 25, 75, 255));
+
+    // Crear el sol y Venus
+    let sun = CelestialBody {
+        name: "Sun".to_string(),
+        translation: Vector3::new(0.0, 0.0, 0.0),
+        scale: 10.0,
+        rotation: Vector3::new(0.0, 0.0, 0.0),
+        orbit_radius: 0.0,  // No orbit for the sun
+        orbit_speed: 0.0,
+        rotation_speed: 0.5, // Rotates on its axis
+        color: Color::new(255, 255, 0, 255), // Yellow for sun
+    };
+
+    let venus = CelestialBody {
+        name: "Venus".to_string(),
+        translation: Vector3::new(0.0, 0.0, 0.0), // This will be updated based on orbit
+        scale: 3.0, // Smaller than sun
+        rotation: Vector3::new(0.0, 0.0, 0.0),
+        orbit_radius: 25.0, // Distance from sun
+        orbit_speed: 0.3, // Orbital speed
+        rotation_speed: 0.7, // Rotation speed on its axis
+        color: Color::new(255, 165, 0, 255), // Orange for Venus
+    };
+
+    let celestial_bodies = vec![sun, venus];
 
     let mut time = 0.0;
 
@@ -113,27 +144,43 @@ fn main() {
         
         framebuffer.clear();
         framebuffer.set_current_color(Color::new(200, 200, 255, 255));
-        
-        // Update sun rotation (rotates around Y axis)
-        rotation.y += dt * 0.5; // Adjust the 0.5 value to change rotation speed
-        
-        // Crear matrices de transformación
-        let model_matrix = create_model_matrix(translation, scale, rotation);
-        let view_matrix = camera.get_view_matrix();
-        let projection_matrix = create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0);
-        let viewport_matrix = create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32);
 
-        // Crear uniforms
-        let uniforms = Uniforms {
-            model_matrix,
-            view_matrix,
-            projection_matrix,
-            viewport_matrix,
-            time,
-            dt,
-        };
+        // Render each celestial body
+        for mut body in celestial_bodies.clone() {
+            // Update orbital position for planets (not for the sun)
+            if body.name != "Sun" {
+                body.translation.x = (time * body.orbit_speed).cos() * body.orbit_radius;
+                body.translation.z = (time * body.orbit_speed).sin() * body.orbit_radius;
+            }
+            
+            // Update rotation for all bodies
+            body.rotation.y += dt * body.rotation_speed;
+            
+            // Set color for the body
+            framebuffer.set_current_color(body.color);
+            
+            // Crear matrices de transformación para este cuerpo celeste
+            let model_matrix = create_model_matrix(
+                body.translation, 
+                body.scale, 
+                body.rotation
+            );
+            let view_matrix = camera.get_view_matrix();
+            let projection_matrix = create_projection_matrix(PI / 3.0, window_width as f32 / window_height as f32, 0.1, 100.0);
+            let viewport_matrix = create_viewport_matrix(0.0, 0.0, window_width as f32, window_height as f32);
 
-        render(&mut framebuffer, &uniforms, &vertex_array, &light);
+            // Crear uniforms
+            let uniforms = Uniforms {
+                model_matrix,
+                view_matrix,
+                projection_matrix,
+                viewport_matrix,
+                time,
+                dt,
+            };
+
+            render(&mut framebuffer, &uniforms, &vertex_array, &light);
+        }
 
         framebuffer.swap_buffers(&mut window, &raylib_thread);
         
